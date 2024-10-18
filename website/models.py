@@ -60,19 +60,26 @@ class Profile(models.Model):
         staff_group, _ = Group.objects.get_or_create(name='Staff')
         new_staff_group, _ = Group.objects.get_or_create(name='New Staff')
 
-        # Set permissions for each group
-        team_permissions = Permission.objects.filter(codename__in=['add_team', 'change_team', 'view_team', 'delete_team'])
-        membership_permissions = Permission.objects.filter(codename__in=['add_teammembership', 'change_teammembership', 'view_teammembership', 'delete_teammembership'])
+        # Get all permissions for all models
+        all_permissions = Permission.objects.all()
 
-        leader_group.permissions.add(*team_permissions, *membership_permissions)
-        staff_group.permissions.add(
-            Permission.objects.get(codename='view_team'), 
-            Permission.objects.get(codename='view_teammembership')
-        )
-        new_staff_group.permissions.add(
-            Permission.objects.get(codename='view_team'), 
-            Permission.objects.get(codename='view_teammembership')
-        )
+        # Leader: full access to all permissions (add, change, delete, view)
+        leader_permissions = all_permissions.filter(codename__in=[
+            perm.codename for perm in all_permissions if perm.codename.startswith(('add_', 'change_', 'delete_', 'view_'))
+        ])
+        leader_group.permissions.set(leader_permissions)
+
+        # Staff: add, change, and view permissions (no delete)
+        staff_permissions = all_permissions.filter(codename__in=[
+            perm.codename for perm in all_permissions if perm.codename.startswith(('add_', 'change_', 'view_'))
+        ])
+        staff_group.permissions.set(staff_permissions)
+
+        # New Staff: view-only permissions
+        new_staff_permissions = all_permissions.filter(codename__in=[
+            perm.codename for perm in all_permissions if perm.codename.startswith('view_')
+        ])
+        new_staff_group.permissions.set(new_staff_permissions)
 
 
 

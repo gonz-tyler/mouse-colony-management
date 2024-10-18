@@ -3,6 +3,18 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from .models import *
+from .forms import *
+
+@login_required  # Only allow logged-in users (like admin) to create users
+def create_user(request):
+    if request.method == 'POST':
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('user_list')  # Redirect to a user list page after successful creation
+    else:
+        form = CustomUserCreationForm()
+    return render(request, 'user_creation.html', {'form': form})
 
 
 @login_required
