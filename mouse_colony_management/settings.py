@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'mouse_colony_management',
     'website',
     'whitenoise.runserver_nostatic',
 ]
