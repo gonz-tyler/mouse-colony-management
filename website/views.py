@@ -1,31 +1,51 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from .models import *
 from .forms import *
 
-@login_required  # Only allow logged-in users (like admin) to create users
-def create_user(request):
-    if request.method == 'POST':
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('user_list')  # Redirect to a user list page after successful creation
-    else:
-        form = CustomUserCreationForm()
-    return render(request, 'user_creation.html', {'form': form})
+# Legal Boiler-plate Views
+def terms_of_service(request):
+    return render(request, 'legal/terms-of-service.html')
+def privacy_policy(request):
+    return render(request, 'legal/privacy-policy.html')
 
 
 @login_required
-def home(request):
+def home_view(request):
     return render(request, "home.html", {})
 
 @login_required
 def logout_user(request):
     logout(request)
     messages.success(request, "You have been logged out...")
-    return redirect('index')
+    return redirect('login')
+
+def register(request):
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)  # Log the user in after registration
+            return redirect('index')  # Redirect to homepage
+    else:
+        form = RegistrationForm()
+
+    return render(request, 'registration/register.html', {'form': form})
+
+# Generate genetic tree
+def genetic_tree(request, mouse_id):
+    mouse = get_object_or_404(Mouse, mouse_id=mouse_id)
+    ancestors = mouse.get_ancestors()
+    descendants = mouse.get_descendants()
+
+    context = {
+        'mouse': mouse,
+        'ancestors': ancestors,
+        'descendants': descendants,
+    }
+    return render(request, 'genetictree.html', context)
 
 # @login_required
 # def dashboard(request):
