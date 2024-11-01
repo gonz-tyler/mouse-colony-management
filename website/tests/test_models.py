@@ -13,7 +13,46 @@ class CageModelTest(TestCase):
         self.assertEqual(str(cage), 'C001')
 
 class CageHistoryModelTest(TestCase):
-    pass
+
+    def setUp(self):
+        self.strain = Strain.objects.create(name='Strain A')
+        self.mouse = Mouse.objects.create(
+            strain=self.strain,
+            tube_id=1,
+            dob=timezone.now().date(),
+            sex='M',
+            state='alive'
+        )
+        self.cage = Cage.objects.create(cage_number='C001', cage_type='Standard', location='Room 101')
+
+    def test_cage_history_creation(self):
+        # Create a valid CageHistory instance
+        start_date = timezone.now()
+        end_date = start_date + timezone.timedelta(days=1)  # end_date is after start_date
+        cage_history = CageHistory.objects.create(
+            cage_id=self.cage,
+            mouse_id=self.mouse,
+            start_date=start_date,
+            end_date=end_date
+        )
+        # Check if the CageHistory instance was created correctly
+        self.assertEqual(cage_history.cage_id, self.cage)
+        self.assertEqual(cage_history.mouse_id, self.mouse)
+        self.assertEqual(cage_history.start_date, start_date)
+        self.assertEqual(cage_history.end_date, end_date)
+
+    def test_end_date_before_start_date(self):
+        # Create a CageHistory instance with end_date before start_date
+        start_date = timezone.now()
+        end_date = start_date - timezone.timedelta(days=1)  # end_date is before start_date
+
+        with self.assertRaises(ValidationError):
+            CageHistory.objects.create(
+                cage_id=self.cage,
+                mouse_id=self.mouse,
+                start_date=start_date,
+                end_date=end_date
+            )
 
 class UserModelTest(TestCase):
 

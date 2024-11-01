@@ -25,6 +25,16 @@ class CageHistory(models.Model):
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
 
+    def clean(self):
+        # Ensure end_date is after start_date
+        if self.end_date <= self.start_date:
+            raise ValidationError('End date must be after start date.')
+
+    def save(self, *args, **kwargs):
+        # Call clean method before saving
+        self.clean()
+        super().save(*args, **kwargs)
+
 # ---------- User Model ----------
 class User(AbstractUser):
     ROLE_CHOICES = [
