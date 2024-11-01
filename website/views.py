@@ -14,7 +14,16 @@ def privacy_policy(request):
 
 @login_required
 def home_view(request):
-    return render(request, "home.html", {})
+    # Get the fields of the Mouse model dynamically
+    mouse_fields = [field.name for field in Mouse._meta.get_fields() if not field.many_to_many]
+
+    # Fetch only the Mouse records that belong to the logged-in user
+    mice = Mouse.mice_managed_by_user(request.user)
+    context = {
+        'mouse_fields': mouse_fields,
+        'mice': mice,
+    }
+    return render(request, 'home.html', context=context)
 
 @login_required
 def logout_user(request):

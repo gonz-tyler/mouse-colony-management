@@ -86,7 +86,7 @@ class TeamMembership(models.Model):
 class Weight(models.Model):
     weight_id = models.AutoField(primary_key=True)
     mouse = models.ForeignKey('Mouse', on_delete=models.CASCADE)
-    weight = models.DecimalField()
+    weight = models.DecimalField(max_digits=5, decimal_places=2)
     measured_at = models.DateTimeField(null=True, blank=True)
 
 
@@ -112,7 +112,7 @@ class Mouse(models.Model):
     clipped_date = models.DateField(null=True, blank=True)
     state = models.CharField(max_length=12, choices=STATE_CHOICES)
     cull_date = models.DateTimeField(null=True, blank=True)
-    weaned = models.BooleanField() # auto true
+    weaned = models.BooleanField(default=False)
     weaned_date = models.DateField(null=True, blank=True)
     # change mouse to mousekeeper table
     #mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
@@ -139,16 +139,59 @@ class Mouse(models.Model):
         for child in descendants:
             descendants.extend(child.get_descendants())
         return descendants
+    
+    def is_kept_by_user(self, user):
+        return MouseKeeper.objects.filter(mouse=self, user=user).exists()
+
+    def is_kept_by_team(self, team):
+        return MouseKeeper.objects.filter(mouse=self, team=team).exists()
+
+    @classmethod
+    def mice_managed_by_user(cls, user):
+        # Start with an empty queryset
+        mice = cls.objects.none()
+
+        # Retrieve all mice directly kept by the user if they are a MouseKeeper
+        if MouseKeeper.objects.filter(user=user).exists():
+            direct_mice = cls.objects.filter(mousekeeper__user=user)
+        else:
+            direct_mice = cls.objects.none()
+
+        # Retrieve all team IDs the user is part of, if any
+        team_ids = TeamMembership.objects.filter(user=user).values_list('team', flat=True)
+        
+        # Retrieve mice associated with these teams, if any
+        if team_ids:
+            team_mice = cls.objects.filter(mousekeeper__team__in=team_ids)
+        else:
+            team_mice = cls.objects.none()
+
+        # Combine direct mice and team-associated mice, ensuring no duplicates
+        mice = (direct_mice | team_mice).distinct()
+
+        return mice
 
 # ---------- Mouse Keeper Model ----------
 class MouseKeeper(models.Model):
-    mouse_id = models.ForeignKey(Mouse, on_delete=models.CASCADE)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True)
     start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    end_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        unique_together = ('mouse_id', 'user_id')
+        unique_together = ('mouse', 'user', 'team')
+
+    def clean(self):
+        # Ensure only one of user or team is set
+        if self.user and self.team:
+            raise ValidationError("Specify only one of user or team as the keeper.")
+        if not (self.user or self.team):
+            raise ValidationError("Specify at least one keeper (user or team).")
+        super().clean()
+
+    def __str__(self):
+        return f"Mouse {self.mouse.mouse_id} - Keeper {self.user or self.team}"
 
 # ---------- Project Model ----------
 class Project(models.Model):
