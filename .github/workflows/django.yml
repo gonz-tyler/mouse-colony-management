@@ -21,6 +21,13 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Set up Database Environment Variables
+        env:
+          DB_NAME: ${{ secrets.DATABASE_NAME }}
+          DB_USER: ${{ secrets.DATABASE_USER }}
+          DB_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DB_HOST: ${{ secrets.DATABASE_HOST }}
+          DB_PORT: ${{ secrets.DATABASE_PORT }}
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
