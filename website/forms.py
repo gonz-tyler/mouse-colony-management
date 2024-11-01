@@ -8,10 +8,12 @@ class RegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)  # Keep email as required
     first_name = forms.CharField(max_length=30, required=True)  # First name
     last_name = forms.CharField(max_length=30, required=True)  # Last name
+    terms_of_service = forms.BooleanField(required=True, label='I agree to the Terms of Service')
+    privacy_policy = forms.BooleanField(required=True, label='I agree to the Privacy Policy')
 
     class Meta:
         model = User  # Use your custom User model
-        fields = ("username", "first_name", "last_name", "email", "password1", "password2", "role")  # Include first and last names
+        fields = ("username", "first_name", "last_name", "email", "password1", "password2", "role", "terms_of_service", "privacy_policy")
 
     def clean_email(self):
         # This method will be called automatically to clean the email field

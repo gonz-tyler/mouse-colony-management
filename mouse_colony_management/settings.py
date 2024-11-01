@@ -19,8 +19,8 @@ import dj_database_url # heroku database neccessary import
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Initialize environment variables
-env = environ.Env()
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))  # Load the .env file
+env = environ.Env() 
+env.read_env(os.path.join(BASE_DIR, '.env'))  # Load the .env file
 
 
 # Quick-start development settings - unsuitable for production
@@ -30,7 +30,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))  # Load the .env file
 SECRET_KEY = 'django-insecure-rb-i&@y^6%6w=)d!ylgu31z6a^u*qkxwzw-9fa&_()z#xo&gb-'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*',]
 
@@ -101,7 +101,8 @@ WSGI_APPLICATION = 'mouse_colony_management.wsgi.application'
 # if 'DATABASE_URL' in os.environ:
 #     DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
-
+# Comment this out during local development
+# Remember to uncomment before pushing to GitHub 'main' branch
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -112,6 +113,20 @@ DATABASES = {
         'PORT': os.environ.get('DB_PORT'),
     }
 }
+
+# Uncomment during local development
+# .env must be present
+# Comment before pushing to GitHub 'main' branch
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': env('DB_NAME'),
+#         'USER': env('DB_USER'),
+#         'PASSWORD': env('DB_PASSWORD'),
+#         'HOST': env('DB_HOST'),
+#         'PORT': env('DB_PORT'),
+#     }
+# }
 
 
 # Password validation

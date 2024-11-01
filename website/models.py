@@ -6,12 +6,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 import datetime as dt
 
-# # ---------- Role Model ----------
-# class Role(models.Model):
-#     name = models.CharField(max_length=50)
 
-#     def __str__(self):
-#         return self.name
     
 # ---------- Cage Model ----------
 class Cage(models.Model):
@@ -22,7 +17,23 @@ class Cage(models.Model):
 
     def __str__(self):
         return self.cage_number
+    
+# ---------- Cage History Model ----------
+class CageHistory(models.Model):
+    cage_id = models.ForeignKey(Cage, on_delete=models.CASCADE)
+    mouse_id = models.ForeignKey('Mouse', on_delete=models.CASCADE)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
 
+    def clean(self):
+        # Ensure end_date is after start_date
+        if self.end_date <= self.start_date:
+            raise ValidationError('End date must be after start date.')
+
+    def save(self, *args, **kwargs):
+        # Call clean method before saving
+        self.clean()
+        super().save(*args, **kwargs)
 
 # ---------- User Model ----------
 class User(AbstractUser):
@@ -43,7 +54,6 @@ class User(AbstractUser):
         self.full_clean()  # Calls the clean method before saving
         super().save(*args, **kwargs)
 
-
 # ---------- Team Model ----------
 class Team(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -63,23 +73,12 @@ class TeamMembership(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.team.name} ({self.user.role})"
 
-
-# # ---------- Researcher Profile ----------
-# class ResearcherProfile(models.Model):
-#     user = models.OneToOneField(User, on_delete=models.CASCADE)
-#     role = models.ForeignKey(Role, on_delete=models.CASCADE)
-
-#     def __str__(self):
-#         return f"{self.user.username} - {self.role.name}"
-
-
-# # Signal to create a ResearcherProfile when a User is created
-# @receiver(post_save, sender=User)
-# def create_user_profile(sender, instance, created, **kwargs):
-#     if created:
-#         default_role = Role.objects.get(name='New Staff')  # Ensure 'New Staff' role exists
-#         ResearcherProfile.objects.create(user=instance, role=default_role)
-
+# ---------- Weight Model ----------
+class Weight(models.Model):
+    weight_id = models.AutoField(primary_key=True)
+    mouse = models.ForeignKey('Mouse', on_delete=models.CASCADE)
+    weight = models.DecimalField(max_digits=5, decimal_places=2)
+    measured_at = models.DateTimeField(null=True, blank=True)
 
 # ---------- Mouse Model ----------
 class Mouse(models.Model):
@@ -103,7 +102,11 @@ class Mouse(models.Model):
     clipped_date = models.DateField(null=True, blank=True)
     state = models.CharField(max_length=12, choices=STATE_CHOICES)
     cull_date = models.DateTimeField(null=True, blank=True)
-    mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
+    weaned = models.BooleanField(default=False)
+    weaned_date = models.DateField(null=True, blank=True)
+    # change mouse to mousekeeper table
+    #mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
+
 
     class Meta:
         unique_together = ('strain', 'tube_id')
@@ -126,7 +129,82 @@ class Mouse(models.Model):
         for child in descendants:
             descendants.extend(child.get_descendants())
         return descendants
+    
+    def is_kept_by_user(self, user):
+        return MouseKeeper.objects.filter(mouse=self, user=user).exists()
 
+    def is_kept_by_team(self, team):
+        return MouseKeeper.objects.filter(mouse=self, team=team).exists()
+
+    @classmethod
+    def mice_managed_by_user(cls, user):
+        # Start with an empty queryset
+        mice = cls.objects.none()
+
+        # Retrieve all mice directly kept by the user if they are a MouseKeeper
+        if MouseKeeper.objects.filter(user=user).exists():
+            direct_mice = cls.objects.filter(mousekeeper__user=user)
+        else:
+            direct_mice = cls.objects.none()
+
+        # Retrieve all team IDs the user is part of, if any
+        team_ids = TeamMembership.objects.filter(user=user).values_list('team', flat=True)
+        
+        # Retrieve mice associated with these teams, if any
+        if team_ids:
+            team_mice = cls.objects.filter(mousekeeper__team__in=team_ids)
+        else:
+            team_mice = cls.objects.none()
+
+        # Combine direct mice and team-associated mice, ensuring no duplicates
+        mice = (direct_mice | team_mice).distinct()
+
+        return mice
+
+# ---------- Mouse Keeper Model ----------
+class MouseKeeper(models.Model):
+    mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('mouse', 'user', 'team')
+
+    def clean(self):
+        # Ensure only one of user or team is set
+        if self.user and self.team:
+            raise ValidationError("Specify only one of user or team as the keeper.")
+        if not (self.user or self.team):
+            raise ValidationError("Specify at least one keeper (user or team).")
+        super().clean()
+
+    def __str__(self):
+        return f"Mouse {self.mouse.mouse_id} - Keeper {self.user or self.team}"
+
+# ---------- Project Model ----------
+class Project(models.Model):
+    project_id = models.BigAutoField(primary_key=True)
+    description = models.TextField()
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField(blank=True, null=True)
+
+# ---------- Project Mouse Model ----------
+class ProjectMouse(models.Model):
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    mouse_id = models.ForeignKey(Mouse, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('project_id', 'mouse_id')
+
+# ---------- Project User Model ----------
+class ProjectUser(models.Model):
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('project_id', 'user_id')
 
 # ---------- Request Model ----------
 class Request(models.Model):
@@ -217,7 +295,6 @@ class Request(models.Model):
         #     self.mouse.save()
         #     self.second_mouse.save()
            
-
 # ---------- Breed Model ----------
 class Breed(models.Model):
     breed_id = models.AutoField(primary_key=True)
@@ -256,7 +333,6 @@ class Genotype(models.Model):
 
     def __str__(self):
         return f"{self.mouse.mouse_id} - {self.gene}: {self.allele_1}/{self.allele_2}"
-
 
 # ---------- Phenotype Model ----------
 class Phenotype(models.Model):

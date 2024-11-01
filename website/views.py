@@ -14,7 +14,9 @@ def privacy_policy(request):
 
 @login_required
 def home_view(request):
-    return render(request, "home.html", {})
+    # Fetch only the Mouse records that belong to the logged-in user
+    mice = Mouse.mice_managed_by_user(request.user)
+    return render(request, 'home.html', {'mice': mice})
 
 @login_required
 def logout_user(request):
