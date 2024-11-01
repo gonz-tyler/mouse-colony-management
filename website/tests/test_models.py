@@ -1,6 +1,7 @@
 from django.test import TestCase
 from website.models import *
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 import datetime as dt
 
 class CageModelTest(TestCase):
@@ -10,6 +11,9 @@ class CageModelTest(TestCase):
         self.assertEqual(Cage.objects.count(), 1)
         self.assertEqual(cage.cage_number, 'C001')
         self.assertEqual(str(cage), 'C001')
+
+class CageHistoryModelTest(TestCase):
+    pass
 
 class UserModelTest(TestCase):
 
@@ -31,6 +35,51 @@ class UserModelTest(TestCase):
         with self.assertRaises(ValidationError):
             user.full_clean()  # This should trigger the clean method and raise a ValidationError
 
+class TeamModelTests(TestCase):
+    def test_create_team(self):
+        team = Team.objects.create(name='Team A')
+        self.assertEqual(str(team), 'Team A')
+
+class TeamMembershipModelTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpass', email='test@abdn.ac.uk')
+        self.team = Team.objects.create(name='Team A')
+
+    def test_create_team_membership(self):
+        membership = TeamMembership.objects.create(user=self.user, team=self.team)
+        self.assertEqual(str(membership), f"{self.user.username} - {self.team.name} ({self.user.role})")
+
+    def test_unique_membership(self):
+        TeamMembership.objects.create(user=self.user, team=self.team)
+        with self.assertRaises(ValidationError):
+            duplicate_membership = TeamMembership(user=self.user, team=self.team)
+            duplicate_membership.full_clean()  # This should raise a validation error
+
+class MouseKeeperModelTests(TestCase):
+    def setUp(self):
+        self.mouse = Mouse.objects.create(
+            strain=Strain.objects.create(name='Strain A'),
+            tube_id=1,
+            dob=dt.date(2023, 1, 1),
+            sex='M',
+            state='alive'
+        )
+        self.user = User.objects.create_user(username='testuser', password='testpass', email='test@abdn.ac.uk')
+        self.team = Team.objects.create(name='Team A')
+
+    def test_create_mouse_keeper_with_user(self):
+        keeper = MouseKeeper.objects.create(mouse=self.mouse, user=self.user, start_date=dt.date(2023, 1, 1),)
+        self.assertEqual(str(keeper), f"Mouse {self.mouse.mouse_id} - Keeper {self.user}")
+
+    def test_create_mouse_keeper_with_team(self):
+        keeper = MouseKeeper.objects.create(mouse=self.mouse, team=self.team, start_date=dt.date(2023, 1, 1),)
+        self.assertEqual(str(keeper), f"Mouse {self.mouse.mouse_id} - Keeper {self.team}")
+
+    def test_clean_method_raises_validation_error(self):
+        with self.assertRaises(ValidationError):
+            keeper = MouseKeeper(mouse=self.mouse, user=self.user, team=self.team, start_date=dt.date(2023, 1, 1),)
+            keeper.full_clean()  # Should raise validation error for both user and team being set
+
 class MouseModelTest(TestCase):
 
     def setUp(self):
@@ -45,21 +94,101 @@ class MouseModelTest(TestCase):
             dob=dt.date(2023, 1, 1),
             sex='M',
             state='alive',
-            mouse_keeper=self.user
         )
         self.assertEqual(Mouse.objects.count(), 1)
         self.assertEqual(mouse.state, 'alive')
         self.assertEqual(str(mouse), f"Mouse {mouse.mouse_id} - {self.strain} - Tube 101")
 
     def test_mouse_ancestors_descendants(self):
-        mother = Mouse.objects.create(strain=self.strain, tube_id=1, dob=dt.date(2020, 1, 1), sex='F', state='alive', mouse_keeper=self.user)
-        father = Mouse.objects.create(strain=self.strain, tube_id=2, dob=dt.date(2020, 1, 1), sex='M', state='alive', mouse_keeper=self.user)
-        child = Mouse.objects.create(strain=self.strain, tube_id=3, dob=dt.date(2023, 1, 1), sex='M', state='alive', mother=mother, father=father, mouse_keeper=self.user)
+        mother = Mouse.objects.create(strain=self.strain, tube_id=1, dob=dt.date(2020, 1, 1), sex='F', state='alive')
+        father = Mouse.objects.create(strain=self.strain, tube_id=2, dob=dt.date(2020, 1, 1), sex='M', state='alive')
+        child = Mouse.objects.create(strain=self.strain, tube_id=3, dob=dt.date(2023, 1, 1), sex='M', state='alive', mother=mother, father=father)
 
         self.assertIn(mother, child.get_ancestors())
         self.assertIn(father, child.get_ancestors())
         self.assertIn(child, mother.get_descendants())
         self.assertIn(child, father.get_descendants())
+
+class WeightModelTests(TestCase):
+    def setUp(self):
+        self.mouse = Mouse.objects.create(
+            strain=Strain.objects.create(name='Strain A'),
+            tube_id=1,
+            dob=dt.date(2023, 1, 1),
+            sex='M',
+            state='alive'
+        )
+
+    def test_create_weight(self):
+        weight = Weight.objects.create(mouse=self.mouse, weight=25.5)
+        self.assertEqual(weight.weight, 25.5)
+
+class ProjectModelTests(TestCase):
+    def test_create_project(self):
+        project = Project.objects.create(
+            description="Sample Project",
+            start_date=timezone.now(),
+            end_date=timezone.now() + timezone.timedelta(days=30)
+        )
+        self.assertEqual(str(project.description), "Sample Project")
+
+    def test_project_end_date_optional(self):
+        project = Project.objects.create(
+            description="Project without end date",
+            start_date=timezone.now()
+        )
+        self.assertIsNone(project.end_date)
+
+class ProjectMouseModelTests(TestCase):
+    def setUp(self):
+        self.strain = Strain.objects.create(name='Strain A')
+        self.project = Project.objects.create(
+            description="Sample Project",
+            start_date=timezone.now(),
+            end_date=timezone.now() + timezone.timedelta(days=30)
+        )
+        self.mouse = Mouse.objects.create(
+            strain=self.strain,
+            tube_id=1,
+            dob=timezone.now().date(),
+            sex='M',
+            state='alive'
+        )
+
+    def test_create_project_mouse(self):
+        project_mouse = ProjectMouse.objects.create(project_id=self.project, mouse_id=self.mouse)
+        self.assertEqual(project_mouse.project_id, self.project)
+        self.assertEqual(project_mouse.mouse_id, self.mouse)
+
+    def test_unique_together_constraint(self):
+        ProjectMouse.objects.create(project_id=self.project, mouse_id=self.mouse)
+        with self.assertRaises(ValidationError):
+            duplicate_project_mouse = ProjectMouse(project_id=self.project, mouse_id=self.mouse)
+            duplicate_project_mouse.full_clean()  # This should raise a validation error
+
+class ProjectUserModelTests(TestCase):
+    def setUp(self):
+        self.project = Project.objects.create(
+            description="Sample Project",
+            start_date=timezone.now(),
+            end_date=timezone.now() + timezone.timedelta(days=30)
+        )
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpass',
+            email='test@abdn.ac.uk'
+        )
+
+    def test_create_project_user(self):
+        project_user = ProjectUser.objects.create(project_id=self.project, user_id=self.user)
+        self.assertEqual(project_user.project_id, self.project)
+        self.assertEqual(project_user.user_id, self.user)
+
+    def test_unique_together_constraint(self):
+        ProjectUser.objects.create(project_id=self.project, user_id=self.user)
+        with self.assertRaises(ValidationError):
+            duplicate_project_user = ProjectUser(project_id=self.project, user_id=self.user)
+            duplicate_project_user.full_clean()
 
 class RequestModelTest(TestCase):
 
@@ -67,8 +196,8 @@ class RequestModelTest(TestCase):
         self.strain = Strain.objects.create(name='C57BL/6')
         self.user = User.objects.create_user(username='requester', email='requester@abdn.ac.uk', password='pass123')
         self.cage = Cage.objects.create(cage_number='C001', cage_type='Breeding', location='Room 101')
-        self.mouse_male = Mouse.objects.create(strain=self.strain, tube_id=101, dob=dt.date(2023, 1, 1), sex='M', state='alive', mouse_keeper=self.user)
-        self.mouse_female = Mouse.objects.create(strain=self.strain, tube_id=102, dob=dt.date(2023, 1, 1), sex='F', state='alive', mouse_keeper=self.user)
+        self.mouse_male = Mouse.objects.create(strain=self.strain, tube_id=101, dob=dt.date(2023, 1, 1), sex='M', state='alive')
+        self.mouse_female = Mouse.objects.create(strain=self.strain, tube_id=102, dob=dt.date(2023, 1, 1), sex='F', state='alive')
 
     def test_breeding_request(self):
         # Valid breeding request
@@ -142,8 +271,7 @@ class StrainModelTest(TestCase):
         self.assertEqual(Strain.objects.count(), 1)
         self.assertEqual(str(strain), 'C57BL/6')
 
-
-class GenotypePhenotypeModelTest(TestCase):
+class GenotypeModelTest(TestCase):
 
     def setUp(self):
         self.strain = Strain.objects.create(name='C57BL/6')
@@ -158,6 +286,12 @@ class GenotypePhenotypeModelTest(TestCase):
         )
         self.assertEqual(Genotype.objects.count(), 1)
         self.assertEqual(str(genotype), f"{self.mouse.mouse_id} - p53: A/B")
+
+class PhenotypeModelTest(TestCase):
+
+    def setUp(self):
+        self.strain = Strain.objects.create(name='C57BL/6')
+        self.mouse = Mouse.objects.create(strain=self.strain, tube_id=101, dob=dt.date(2023, 1, 1), sex='M', state='alive')
 
     def test_create_phenotype(self):
         phenotype = Phenotype.objects.create(

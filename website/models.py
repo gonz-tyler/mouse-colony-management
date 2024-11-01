@@ -25,7 +25,6 @@ class CageHistory(models.Model):
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
 
-
 # ---------- User Model ----------
 class User(AbstractUser):
     ROLE_CHOICES = [
@@ -44,7 +43,6 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         self.full_clean()  # Calls the clean method before saving
         super().save(*args, **kwargs)
-
 
 # ---------- Team Model ----------
 class Team(models.Model):
@@ -65,30 +63,12 @@ class TeamMembership(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.team.name} ({self.user.role})"
 
-
-# # ---------- Researcher Profile ----------
-# class ResearcherProfile(models.Model):
-#     user = models.OneToOneField(User, on_delete=models.CASCADE)
-#     role = models.ForeignKey(Role, on_delete=models.CASCADE)
-
-#     def __str__(self):
-#         return f"{self.user.username} - {self.role.name}"
-
-
-# # Signal to create a ResearcherProfile when a User is created
-# @receiver(post_save, sender=User)
-# def create_user_profile(sender, instance, created, **kwargs):
-#     if created:
-#         default_role = Role.objects.get(name='New Staff')  # Ensure 'New Staff' role exists
-#         ResearcherProfile.objects.create(user=instance, role=default_role)
-
 # ---------- Weight Model ----------
 class Weight(models.Model):
     weight_id = models.AutoField(primary_key=True)
     mouse = models.ForeignKey('Mouse', on_delete=models.CASCADE)
     weight = models.DecimalField(max_digits=5, decimal_places=2)
     measured_at = models.DateTimeField(null=True, blank=True)
-
 
 # ---------- Mouse Model ----------
 class Mouse(models.Model):
@@ -305,7 +285,6 @@ class Request(models.Model):
         #     self.mouse.save()
         #     self.second_mouse.save()
            
-
 # ---------- Breed Model ----------
 class Breed(models.Model):
     breed_id = models.AutoField(primary_key=True)
@@ -344,7 +323,6 @@ class Genotype(models.Model):
 
     def __str__(self):
         return f"{self.mouse.mouse_id} - {self.gene}: {self.allele_1}/{self.allele_2}"
-
 
 # ---------- Phenotype Model ----------
 class Phenotype(models.Model):

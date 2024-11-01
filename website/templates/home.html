@@ -6,7 +6,7 @@
 <div class="header-container">
     <h1>Mice</h1>
     {% if user.role == 'leader' %}
-    <a href="{% url '#' %}" class="btn btn-primary add-record-btn">
+    <a href="{% url 'index' %}" class="btn btn-primary add-record-btn">
         <i class="fas fa-plus"></i> Add Mouse
     </a>
     {% endif %}
@@ -41,7 +41,8 @@
                     
                     <td>
                         {% if mouse.father %}
-                            <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a>
+                            <!-- <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a> -->
+                            <a href="{% url 'index' %}">Mouse {{ mouse.father.mouse_id }}</a>
                         {% else %}
                             N/A
                         {% endif %}
@@ -49,7 +50,8 @@
                     
                     <td>
                         {% if mouse.mother %}
-                            <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a>
+                            <!-- <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a> -->
+                            <a href="{% url 'index' %}">Mouse {{ mouse.mother.mouse_id }}</a>
                         {% else %}
                             N/A
                         {% endif %}
@@ -71,7 +73,7 @@
     </tbody>
 </table>
 {% if user.role == 'leader' %}
-<a href="{% url 'list_users' %}" class="btn btn-primary add-record-btn" style="max-width: max-content;">
+<a href="{% url 'index' %}" class="btn btn-primary add-record-btn" style="max-width: max-content;">
     Admin Management
 </a>
 {% endif %}

@@ -62,14 +62,19 @@ class RegisterViewTest(TestCase):
             'email': 'newuser@abdn.ac.uk',
             'password1': 'strongpassword123',
             'password2': 'strongpassword123',
-            'role': 'leader'
+            'role': 'leader',
+            'terms_of_service': True,
+            'privacy_policy': True,
         }
         response = self.client.post(reverse('register'), data=form_data)
-        self.assertRedirects(response, reverse('index'))
         
+        # Ensure response is a redirect to index
+        self.assertRedirects(response, reverse('index'), msg_prefix='Redirect failed')
+
         # Check if the user was created
         user_exists = User.objects.filter(username='newuser').exists()
         self.assertTrue(user_exists)
+
 
     def test_register_view_post_invalid(self):
         form_data = {
@@ -79,7 +84,9 @@ class RegisterViewTest(TestCase):
             'email': 'invalid_email',
             'password1': 'pass',
             'password2': 'different_pass',
-            'role': 'leader'
+            'role': 'leader',
+            'tos': False,
+            'privacyPolicy': False,
         }
         response = self.client.post(reverse('register'), data=form_data)
         self.assertEqual(response.status_code, 200)

@@ -3,7 +3,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    # path('admin/', admin.site.urls),
     path('legal/terms-of-service/', views.terms_of_service, name='terms_of_service'), # legal
     path('legal/privacy-policy/', views.privacy_policy, name='privacy_policy'), # legal
     path('', views.home_view, name='index'),  # Index page

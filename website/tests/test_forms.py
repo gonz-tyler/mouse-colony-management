@@ -13,6 +13,9 @@ class TestRegistrationForm(TestCase):
             'password1': 'strongpassword123',
             'password2': 'strongpassword123',
             'role': 'new_staff',
+            'terms_of_service': True,
+            'privacy_policy': True,
+            
         }
         form = RegistrationForm(data=form_data)
         self.assertTrue(form.is_valid())
@@ -27,6 +30,8 @@ class TestRegistrationForm(TestCase):
             'password1': '123',
             'password2': '456',  # Passwords don't match
             'role': '',
+            'terms_of_service': False,
+            'privacy_policy': False,
         }
         form = RegistrationForm(data=form_data)
         self.assertFalse(form.is_valid())
@@ -47,6 +52,8 @@ class TestRegistrationForm(TestCase):
             'password1': 'strongpassword123',
             'password2': 'strongpassword123',
             'role': 'leader',
+            'terms_of_service': True,
+            'privacy_policy': True,
         }
         form = RegistrationForm(data=form_data)
         self.assertTrue(form.is_valid())  # The form should be valid with a correct email
@@ -61,6 +68,8 @@ class TestRegistrationForm(TestCase):
             'password1': 'strongpassword123',
             'password2': 'strongpassword123',
             'role': 'leader',
+            'terms_of_service': True,
+            'privacy_policy': True,
         }
         form = RegistrationForm(data=form_data)
         self.assertFalse(form.is_valid())  # The form should be invalid due to the wrong email
