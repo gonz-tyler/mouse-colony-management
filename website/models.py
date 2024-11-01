@@ -6,12 +6,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 import datetime as dt
 
-# # ---------- Role Model ----------
-# class Role(models.Model):
-#     name = models.CharField(max_length=50)
 
-#     def __str__(self):
-#         return self.name
     
 # ---------- Cage Model ----------
 class Cage(models.Model):
@@ -22,6 +17,13 @@ class Cage(models.Model):
 
     def __str__(self):
         return self.cage_number
+    
+# ---------- Cage History Model ----------
+class CageHistory(models.Model):
+    cage_id = models.ForeignKey(Cage, on_delete=models.CASCADE)
+    mouse_id = models.ForeignKey('Mouse', on_delete=models.CASCADE)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
 
 
 # ---------- User Model ----------
@@ -80,6 +82,13 @@ class TeamMembership(models.Model):
 #         default_role = Role.objects.get(name='New Staff')  # Ensure 'New Staff' role exists
 #         ResearcherProfile.objects.create(user=instance, role=default_role)
 
+# ---------- Weight Model ----------
+class Weight(models.Model):
+    weight_id = models.AutoField(primary_key=True)
+    mouse = models.ForeignKey('Mouse', on_delete=models.CASCADE)
+    weight = models.DecimalField()
+    measured_at = models.DateTimeField(null=True, blank=True)
+
 
 # ---------- Mouse Model ----------
 class Mouse(models.Model):
@@ -103,7 +112,11 @@ class Mouse(models.Model):
     clipped_date = models.DateField(null=True, blank=True)
     state = models.CharField(max_length=12, choices=STATE_CHOICES)
     cull_date = models.DateTimeField(null=True, blank=True)
-    mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
+    weaned = models.BooleanField() # auto true
+    weaned_date = models.DateField(null=True, blank=True)
+    # change mouse to mousekeeper table
+    #mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
+
 
     class Meta:
         unique_together = ('strain', 'tube_id')
@@ -127,6 +140,38 @@ class Mouse(models.Model):
             descendants.extend(child.get_descendants())
         return descendants
 
+# ---------- Mouse Keeper Model ----------
+class MouseKeeper(models.Model):
+    mouse_id = models.ForeignKey(Mouse, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
+
+    class Meta:
+        unique_together = ('mouse_id', 'user_id')
+
+# ---------- Project Model ----------
+class Project(models.Model):
+    project_id = models.BigAutoField(primary_key=True)
+    description = models.TextField()
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField(blank=True, null=True)
+
+# ---------- Project Mouse Model ----------
+class ProjectMouse(models.Model):
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    mouse_id = models.ForeignKey(Mouse, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('project_id', 'mouse_id')
+
+# ---------- Project User Model ----------
+class ProjectUser(models.Model):
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('project_id', 'user_id')
 
 # ---------- Request Model ----------
 class Request(models.Model):
