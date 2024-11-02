@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div>
+    {% if user.role == 'leader' %}
+    <a href="{% url 'create_team' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Create Team
+    </a>
+    {% endif %}
+    
+    <!-- Gallery container for teams -->
+    <div class="team-gallery">
+        {% for item in team_data %}
+            <div class="team-card">
+                <h2><a href="{% url 'team_details' item.team.name %}">{{ item.team.name }}</a></h2>
+                <p>Members:</p>
+                <ul>
+                    {% for membership in item.team.teammembership_set.all %}
+                        <li>{{ membership.user.username }}</li>
+                    {% endfor %}
+                </ul>
+                
+                {% if not item.is_member %}
+                    <form action="{% url 'join_team' item.team.name %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">Join Team</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add custom CSS for the gallery layout and cards -->
+<style>
+    /* Gallery layout */
+    .team-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Responsive columns */
+        gap: 20px; /* Spacing between cards */
+        margin-top: 20px;
+    }
+
+    /* Card styling */
+    .team-card {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .team-card h2 {
+        font-size: 1.25rem;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .team-card ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0 0 15px;
+    }
+
+    .team-card li {
+        font-size: 0.9rem;
+        color: #555;
+    }
+
+    .btn-success {
+        font-size: 0.9rem;
+    }
+
+    .btn-success:hover {
+        background-color: #218838;
+        color: #fff;
+    }
+</style>
+
+{% endblock %}

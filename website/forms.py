@@ -63,4 +63,7 @@ class AddMouseForm(forms.ModelForm):
         if user is not None:
             self.fields['team'].queryset = Team.objects.filter(teammembership__user=user)
 
-
+class TeamForm(forms.ModelForm):
+    class Meta:
+        model = Team
+        fields = ['name']

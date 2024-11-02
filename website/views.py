@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.http import JsonResponse
 from .decorators import role_required
 from .models import *
 from .forms import *
@@ -118,4 +119,72 @@ class MouseClass:
         messages.success(request, record_deleted)
         return redirect('index')
 
+class TeamClass:
+    @login_required
+    def all_teams(request):
+        teams = Team.objects.prefetch_related('teammembership_set__user')
+        user_team_names = TeamMembership.objects.filter(user=request.user).values_list('team__name', flat=True)
+        team_data = [
+            {
+                'team': team,
+                'is_member': team.name in user_team_names
+            }
+            for team in teams
+        ]
+        return render(request, 'team/all_teams.html', {'team_data': team_data})
+    
+    @login_required
+    def join_team(request, team_name):
+        team = Team.objects.get(name=team_name)
+        TeamMembership.objects.get_or_create(user=request.user, team=team)
+        return redirect('team_details', team_name=team.name)
+    
+    @login_required
+    def team_details(request, team_name):
+        team = get_object_or_404(Team, name=team_name)
+        is_member = TeamMembership.objects.filter(team=team, user=request.user).exists()
+        is_leader = request.user.role == 'leader'
 
+        context = {
+            'team': team,
+            'is_member': is_member,
+            'is_leader': is_leader
+        }
+        return render(request, 'team/team_details.html', context)
+
+    @login_required
+    def leave_team(request, team_name):
+        team = get_object_or_404(Team, name=team_name)
+        TeamMembership.objects.filter(user=request.user, team=team).delete()
+        return redirect('teams')
+
+    @login_required
+    @role_required(allowed_roles=['leader'])
+    def delete_team(request, team_name):
+        team = get_object_or_404(Team, name=team_name)
+        team.delete()
+        return redirect('teams')  # Redirect to the list of teams after deletion
+    
+    # Team creation view
+    @login_required
+    @role_required(allowed_roles=['leader'])
+    def create_team(request):
+        if request.method == 'POST':
+            form = TeamForm(request.POST)
+            if form.is_valid():
+                team = form.save()
+                member_ids = request.POST.getlist('members')
+                for user_id in member_ids:
+                    TeamMembership.objects.create(team=team, user_id=user_id)
+                return redirect('teams')
+        else:
+            form = TeamForm()
+        return render(request, 'team/create_team.html', {'form': form})
+
+    # AJAX search view for users
+    @login_required
+    def search_users(request):
+        query = request.GET.get('q', '')
+        users = User.objects.filter(username__icontains=query)
+        results = [{'id': user.id, 'username': user.username} for user in users]
+        return JsonResponse(results, safe=False)

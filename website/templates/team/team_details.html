@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="team-details">
+    <h1>{{ team.name }}</h1>
+    <p>Created on: {{ team.created_at|date:"F j, Y" }}</p>
+
+    <h2>Members:</h2>
+    <ul>
+        {% for membership in team.teammembership_set.all %}
+            <li>{{ membership.user.username }}</li>
+        {% empty %}
+            <li>No members yet.</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Display appropriate actions based on user membership status and role -->
+    <div class="actions">
+        {% if not is_member %}
+            <form action="{% url 'join_team' team.name %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success">Join Team</button>
+            </form>
+        {% else %}
+            <form action="{% url 'leave_team' team.name %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-warning">Leave Team</button>
+            </form>
+        {% endif %}
+
+        {% if is_leader and is_member %}
+            <form action="{% url 'delete_team' team.name %}" method="post" onsubmit="return confirm('Are you sure you want to delete this team?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Delete Team</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Optional styling for the team details page -->
+<style>
+    .team-details {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .team-details h1 {
+        font-size: 2rem;
+        color: #333;
+    }
+    .team-details p {
+        font-size: 1rem;
+        color: #666;
+    }
+    .team-details ul {
+        list-style: none;
+        padding: 0;
+    }
+    .team-details li {
+        font-size: 0.9rem;
+        color: #555;
+    }
+    .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    .actions .btn {
+        font-size: 0.9rem;
+    }
+</style>
+
+{% endblock %}
