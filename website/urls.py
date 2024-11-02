@@ -11,4 +11,11 @@ urlpatterns = [
     path('register/', views.register, name='register'), # Register page
     path('logout/', views.logout_user, name="logout_user"),
     path('genetic-tree/<int:mouse_id>/', views.genetic_tree, name='genetic_tree'), # Genetic Tree page
+
+    #-- mice --#
+    path('mice/<int:mouse_id>/', views.MouseClass.view_mouse, name='view_mouse'),
+    path('mice/add/', views.MouseClass.add_mouse, name='add_mouse'),
+    path('mice/update/<int:mouse_id>/', views.MouseClass.MouseUpdateView.as_view(), name='update_mouse'),
+    path('mice/delete/<int:mouse_id>/', views.MouseClass.delete_mouse, name='delete_mouse'),
+
 ]

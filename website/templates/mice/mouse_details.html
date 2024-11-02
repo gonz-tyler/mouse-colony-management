@@ -1,0 +1,45 @@
+{%extends 'base.html' %}
+{%block content%}
+
+<div class="card">
+    <h5 class="card-header">Mouse {{mouse.mouse_id}} </h5>
+    <div class="card-body">
+        <p class="list-group-item"><strong>Mouse ID: </strong>{{ mouse.mouse_id }}</a></p>
+        <p class="list-group-item"><strong>Strain: </strong>{{ mouse.strain.name }}</p>
+        <p class="list-group-item"><strong>Tube ID: </strong>{{ mouse.tube_id }}</p>
+        <p class="list-group-item"><strong>Date of Birth: </strong>{{ mouse.dob }}</p>
+        <p class="list-group-item"><strong>Sex: </strong>{{ mouse.get_sex_display }}</p>
+        <p class="list-group-item"><strong>Father: </strong>
+            {% if mouse.father %}
+                <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a>
+            {% else %}
+                N/A
+            {% endif %}
+        </p>
+        <p class="list-group-item"><strong>Mother: </strong>
+            {% if mouse.mother %}
+                <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a>
+            {% else %}
+                N/A
+            {% endif %}
+        </p>
+        <p class="list-group-item"><strong>Earmark: </strong>{{ mouse.get_earmark_display }}</p>
+        <p class="list-group-item"><strong>Clipped Date: </strong>{{ mouse.clipped_date }}</p>
+        <p class="list-group-item"><strong>State: </strong>{{ mouse.get_state_display }}</p>
+        <p class="list-group-item"><strong>Cull Date: </strong>{{ mouse.cull_date }}</p>
+        <p class="list-group-item"><strong>Weaned: </strong>{{ mouse.weaned|yesno:"Yes,No" }}</p>
+        <p class="list-group-item"><strong>Weaned Date: </strong>{{ mouse.weaned_date }}</p>
+
+        
+
+        <a onclick="history.back()" class="btn btn-secondary">Back</a>
+        {% if user.role == 'leader' %}
+        <a href="{% url 'delete_mouse' mouse.mouse_id %}" class="btn btn-danger">Delete</a>
+        {% endif %}
+        {% if user.role != 'new_staff' %}
+        <a href="{% url 'update_mouse' mouse.mouse_id %}" class="btn btn-success">Edit</a>
+        {% endif %}
+    </div>
+</div>
+
+{%endblock%}
