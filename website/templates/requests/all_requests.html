@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block content %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Requests</title>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center">All Requests</h1>
+
+        <!-- Transfer Requests Section -->
+        <h2 class="mt-5">Transfer Requests</h2>
+        {% if transfers %}
+            <table class="table table-bordered table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Requester</th>
+                        <th>Mouse</th>
+                        <th>Source Cage</th>
+                        <th>Destination Cage</th>
+                        <th>Status</th>
+                        <th>Requested Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transfer in transfers %}
+                        <tr>
+                            <td>{{ transfer.id }}</td>
+                            <td>{{ transfer.requester.username }}</td>
+                            <td>{{ transfer.mouse.mouse_id }}</td>
+                            <td>{{ transfer.source_cage.name }}</td>
+                            <td>{{ transfer.destination_cage.name }}</td>
+                            <td>{{ transfer.get_status_display }}</td>
+                            <td>{{ transfer.request_date|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if user.role == 'breeder' and transfer.status == 'pending' %}
+                                <!-- Approve/Reject Buttons -->
+                                <form action="{% url 'approve_transfer' transfer.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                </form>
+                                <form action="{% url 'reject_transfer' transfer.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                </form>
+                                {% else %}
+                                <form action="{% url 'cancel_transfer_request' transfer.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No transfer requests available.</p>
+        {% endif %}
+        {% if user.role == 'leader' %}
+        <a href="{% url 'create_transfer_request' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Transfer Request
+        </a>
+        {% endif %}
+
+        <!-- Breeding Requests Section -->
+        <h2 class="mt-5">Breeding Requests</h2>
+        {% if breedings %}
+            <table class="table table-bordered table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Requester</th>
+                        <th>Male Mouse</th>
+                        <th>Female Mouse</th>
+                        <th>Cage</th>
+                        <th>Status</th>
+                        <th>Requested Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for breeding in breedings %}
+                        <tr>
+                            <td>{{ breeding.id }}</td>
+                            <td>{{ breeding.requester.username }}</td>
+                            <td>{{ breeding.male_mouse.mouse_id }}</td>
+                            <td>{{ breeding.female_mouse.mouse_id }}</td>
+                            <td>{{ breeding.cage.name }}</td>
+                            <td>{{ breeding.get_status_display }}</td>
+                            <td>{{ breeding.request_date|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if user.role == 'breeder' and breeding.status == 'pending' %}
+                                    <!-- Approve/Reject Buttons -->
+                                    <form action="{% url 'approve_breeding' breeding.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                    </form>
+                                    <form action="{% url 'reject_breeding' breeding.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                    </form>
+                                {% else %}
+                                    {%if breeding.status == 'pending' %}
+                                        <form action="{% url 'cancel_breeding_request' breeding.id %}" method="post">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No breeding requests available.</p>
+        {% endif %}
+        {% if user.role == 'leader' %}
+        <a href="{% url 'create_breeding_request' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Breeding Request
+        </a>
+        {% endif %}
+
+        <!-- Culling Requests Section -->
+        <h2 class="mt-5">Culling Requests</h2>
+        {% if cullings %}
+            <table class="table table-bordered table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Requester</th>
+                        <th>Mouse</th>
+                        <th>Status</th>
+                        <th>Requested Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for culling in cullings %}
+                        <tr>
+                            <td>{{ culling.id }}</td>
+                            <td>{{ culling.requester.username }}</td>
+                            <td>{{ culling.mouse.mouse_id }}</td>
+                            <td>{{ culling.get_status_display }}</td>
+                            <td>{{ culling.request_date|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if user.role == 'breeder' and culling.status == 'pending' %}
+                                    <!-- Approve/Reject Buttons -->
+                                    <form action="{% url 'approve_culling' culling.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                    </form>
+                                    <form action="{% url 'reject_culling' culling.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                    </form>
+                                    {% else %}
+                                    <form action="{% url 'cancel_culling_request' culling.id %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No culling requests available.</p>
+        {% endif %}
+        {% if user.role == 'leader' %}
+        <a href="{% url 'create_culling_request' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Culling Request
+        </a>
+        {% endif %}
+    </div>
+</body>
+</html>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<div>
+    <h1>Add Mouse to Cage: {{ cage.cage_number }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <label for="mouse">Select Mouse:</label>
+        <select name="mouse_id" id="mouse">
+            {% for mouse in available_mice %}
+                <option value="{{ mouse.id }}">{{ mouse.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Add Mouse</button>
+    </form>
+    <a href="{% url 'cage_details' cage.cage_id %}">Back to Cage Details</a>
+</div>
+{% endblock %}

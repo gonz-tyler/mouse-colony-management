@@ -23,11 +23,11 @@ class CageHistory(models.Model):
     cage_id = models.ForeignKey(Cage, on_delete=models.CASCADE)
     mouse_id = models.ForeignKey('Mouse', on_delete=models.CASCADE)
     start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    end_date = models.DateTimeField(null=True, blank=True)
 
     def clean(self):
         # Ensure end_date is after start_date
-        if self.end_date <= self.start_date:
+        if self.end_date is not None and self.end_date <= self.start_date:
             raise ValidationError('End date must be after start date.')
 
     def save(self, *args, **kwargs):
@@ -41,6 +41,7 @@ class User(AbstractUser):
         ('leader', 'Leader'),
         ('staff', 'Staff'),
         ('new_staff', 'New Staff'),
+        ('breeder', 'Breeder'),
     ]
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='new_staff')
 
@@ -206,95 +207,184 @@ class ProjectUser(models.Model):
     class Meta:
         unique_together = ('project_id', 'user_id')
 
-# ---------- Request Model ----------
-class Request(models.Model):
-    REQUEST_TYPES = [
-        ('breed', 'Breeding Request'),
-        ('cull', 'Culling Request'),
-        # ('end_breed', 'End Breeding Request'),
-    ]
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-        ('completed', 'Completed'),
-    ]
-    request_id = models.AutoField(primary_key=True)
+# # ---------- Request Model ----------
+# class Request(models.Model):
+#     REQUEST_TYPES = [
+#         ('breed', 'Breeding Request'),
+#         ('cull', 'Culling Request'),
+#         # ('end_breed', 'End Breeding Request'),
+#     ]
+#     STATUS_CHOICES = [
+#         ('pending', 'Pending'),
+#         ('approved', 'Approved'),
+#         ('rejected', 'Rejected'),
+#         ('completed', 'Completed'),
+#     ]
+#     request_id = models.AutoField(primary_key=True)
+#     requester = models.ForeignKey(User, on_delete=models.CASCADE)
+#     mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='primary_mouse_requests')
+#     second_mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, null=True, blank=True, related_name='secondary_mouse_requests', help_text="For breeding requests, select a second mouse of the opposite sex.")
+#     cage = models.ForeignKey(Cage, on_delete=models.CASCADE, null=True, blank=True, help_text="Required for breeding requests.")
+#     request_type = models.CharField(max_length=10, choices=REQUEST_TYPES)
+#     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+#     submitted_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+#     comments = models.TextField(blank=True, null=True)
+
+#     def clean(self):
+#         """Custom validation for the request model."""
+#         # Ensure second_mouse is provided only for breeding requests
+#         if self.request_type == 'breed':
+#             if not self.second_mouse:
+#                 raise ValidationError("Breeding requests must specify a second mouse.")
+#             # Ensure the two mice are of opposite sex
+#             if self.mouse.sex == self.second_mouse.sex:
+#                 raise ValidationError("For breeding requests, the two mice must be of opposite sexes.")
+#             # Ensure a cage is provided for breeding requests
+#             if not self.cage:
+#                 raise ValidationError("A cage must be specified for breeding requests.")
+#         elif self.request_type == 'cull':
+#             if self.second_mouse:
+#                 raise ValidationError("Culling requests should not have a second mouse.")
+#             # Ensure that cage is not set for non-breeding requests
+#             if self.cage:
+#                 raise ValidationError(f"A cage should not be specified for {self.request_type} requests.")
+
+#         super().clean()
+
+#     def __str__(self):
+#         if self.request_type == 'breed':
+#             return f"Breeding Request: {self.mouse.mouse_id} with {self.second_mouse.mouse_id} by {self.requester.username}"
+#         return f"{self.request_type} Request by {self.requester.username} for Mouse {self.mouse.mouse_id}"
+
+#     def approve(self):
+#         self.status = 'approved'
+#         self.save()
+
+#     def reject(self):
+#         self.status = 'rejected'
+#         self.save()
+
+#     def complete(self):
+#         self.status = 'completed'
+#         self.save()
+
+#         # Handle culling request completion
+#         if self.request_type == 'cull':
+#             self.mouse.state = 'deceased'
+#             self.mouse.cull_date = dt.datetime.now()
+#             self.mouse.save()
+
+#         # Handle breeding request completion
+#         if self.request_type == 'breed':
+#             self.mouse.state = 'breeding'  # Update first mouse to breeding state
+#             self.second_mouse.state = 'breeding'  # Update second mouse to breeding state
+#             self.mouse.save()
+#             self.second_mouse.save()
+
+#             # Create a new Breed instance
+#             Breed.objects.create(
+#                 male=self.mouse,
+#                 female=self.second_mouse,
+#                 cage=self.cage,
+#             )
+
+#         # # Handle end breeding request completion
+#         # if self.request_type == 'end_breed':
+#         #     self.mouse.state = 'alive'  # Update first mouse to alive state
+#         #     self.second_mouse.state = 'alive'  # Update second mouse to alive state
+#         #     self.mouse.save()
+#         #     self.second_mouse.save()
+
+# ---------- Breeding Request Model ----------
+class BreedingRequest(models.Model):
+    STATUS_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('completed', 'Completed')]
     requester = models.ForeignKey(User, on_delete=models.CASCADE)
-    mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='primary_mouse_requests')
-    second_mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, null=True, blank=True, related_name='secondary_mouse_requests', help_text="For breeding requests, select a second mouse of the opposite sex.")
-    cage = models.ForeignKey(Cage, on_delete=models.CASCADE, null=True, blank=True, help_text="Required for breeding requests.")
-    request_type = models.CharField(max_length=10, choices=REQUEST_TYPES)
+    male_mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='breeding_male_requests', limit_choices_to={'sex': 'M'})
+    female_mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='breeding_female_requests', limit_choices_to={'sex': 'F'})
+    cage = models.ForeignKey(Cage, on_delete=models.CASCADE, help_text="Cage for breeding")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    submitted_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    request_date = models.DateTimeField(auto_now_add=True)
+    approval_date = models.DateTimeField(null=True, blank=True)
     comments = models.TextField(blank=True, null=True)
 
     def clean(self):
-        """Custom validation for the request model."""
-        # Ensure second_mouse is provided only for breeding requests
-        if self.request_type == 'breed':
-            if not self.second_mouse:
-                raise ValidationError("Breeding requests must specify a second mouse.")
-            # Ensure the two mice are of opposite sex
-            if self.mouse.sex == self.second_mouse.sex:
-                raise ValidationError("For breeding requests, the two mice must be of opposite sexes.")
-            # Ensure a cage is provided for breeding requests
-            if not self.cage:
-                raise ValidationError("A cage must be specified for breeding requests.")
-        elif self.request_type == 'cull':
-            if self.second_mouse:
-                raise ValidationError("Culling requests should not have a second mouse.")
-            # Ensure that cage is not set for non-breeding requests
-            if self.cage:
-                raise ValidationError(f"A cage should not be specified for {self.request_type} requests.")
-
+        if self.male_mouse.sex != 'M' or self.female_mouse.sex != 'F':
+            raise ValidationError("For breeding, select one male and one female mouse.")
+        if not self.cage:
+            raise ValidationError("A cage must be specified for breeding requests.")
         super().clean()
 
-    def __str__(self):
-        if self.request_type == 'breed':
-            return f"Breeding Request: {self.mouse.mouse_id} with {self.second_mouse.mouse_id} by {self.requester.username}"
-        return f"{self.request_type} Request by {self.requester.username} for Mouse {self.mouse.mouse_id}"
-
-    def approve(self):
+    def approve(self, approver):
         self.status = 'approved'
+        self.approval_date = dt.datetime.now()
+        self.save()
+        # Change mice states and create a Breed instance
+        self.male_mouse.state = 'breeding'
+        self.female_mouse.state = 'breeding'
+        self.male_mouse.save()
+        self.female_mouse.save()
+        Breed.objects.create(male=self.male_mouse, female=self.female_mouse, cage=self.cage)
+
+    def complete(self):
+        self.status = 'completed'
+        self.save()
+        # Additional logic on completion (optional)
+    
+    def reject(self):
+        self.status = 'rejected'
+        self.save()
+
+# ---------- Culling Request Model ----------
+class CullingRequest(models.Model):
+    STATUS_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('completed', 'Completed')]
+    requester = models.ForeignKey(User, on_delete=models.CASCADE)
+    mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='culling_requests')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    request_date = models.DateTimeField(auto_now_add=True)
+    approval_date = models.DateTimeField(null=True, blank=True)
+    comments = models.TextField(blank=True, null=True)
+
+    def complete(self):
+        self.status = 'completed'
+        self.mouse.state = 'deceased'
+        self.mouse.cull_date = dt.datetime.now()
+        self.mouse.save()
+        self.save()
+
+    def approve(self, approver):
+        self.status = 'approved'
+        self.approval_date = dt.datetime.now()
         self.save()
 
     def reject(self):
         self.status = 'rejected'
         self.save()
 
-    def complete(self):
-        self.status = 'completed'
+# ---------- Transfer Request Model ----------
+class TransferRequest(models.Model):
+    STATUS_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('completed', 'Completed')]
+    requester = models.ForeignKey(User, on_delete=models.CASCADE)
+    mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='transfer_requests')
+    source_cage = models.ForeignKey(Cage, on_delete=models.SET_NULL, null=True, related_name='source_transfers')
+    destination_cage = models.ForeignKey(Cage, on_delete=models.CASCADE, related_name='destination_transfers')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    request_date = models.DateTimeField(auto_now_add=True)
+    approval_date = models.DateTimeField(null=True, blank=True)
+    comments = models.TextField(blank=True, null=True)
+
+    def approve(self, approver):
+        self.status = 'approved'
+        self.approval_date = dt.datetime.now()
+        self.save()
+        # Update mouse's cage history
+        CageHistory.objects.filter(mouse_id=self.mouse, end_date__isnull=True).update(end_date=dt.datetime.now())
+        CageHistory.objects.create(cage_id=self.destination_cage, mouse_id=self.mouse, start_date=dt.datetime.now())
+    
+    def reject(self):
+        self.status = 'rejected'
         self.save()
 
-        # Handle culling request completion
-        if self.request_type == 'cull':
-            self.mouse.state = 'deceased'
-            self.mouse.cull_date = dt.datetime.now()
-            self.mouse.save()
-
-        # Handle breeding request completion
-        if self.request_type == 'breed':
-            self.mouse.state = 'breeding'  # Update first mouse to breeding state
-            self.second_mouse.state = 'breeding'  # Update second mouse to breeding state
-            self.mouse.save()
-            self.second_mouse.save()
-
-            # Create a new Breed instance
-            Breed.objects.create(
-                male=self.mouse,
-                female=self.second_mouse,
-                cage=self.cage,
-            )
-
-        # # Handle end breeding request completion
-        # if self.request_type == 'end_breed':
-        #     self.mouse.state = 'alive'  # Update first mouse to alive state
-        #     self.second_mouse.state = 'alive'  # Update second mouse to alive state
-        #     self.mouse.save()
-        #     self.second_mouse.save()
-           
 # ---------- Breed Model ----------
 class Breed(models.Model):
     breed_id = models.AutoField(primary_key=True)

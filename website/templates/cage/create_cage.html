@@ -1,0 +1,75 @@
+<!-- create_cage.html -->
+{% extends 'base.html' %}
+{% block content %}
+
+<form method="post" id="cageForm">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <label for="mouseSearch">Add Mice:</label>
+    <input type="text" id="mouseSearch" placeholder="Search mouse number...">
+    <div id="searchResults"></div>
+    <div id="selectedMice"></div>
+
+    <button type="submit">Create Cage</button>
+</form>
+
+<script>
+    const searchInput = document.getElementById('mouseSearch');
+    const searchResults = document.getElementById('searchResults');
+    const selectedMice = document.getElementById('selectedMice');
+    let selectedMouseIds = new Set();
+
+    searchInput.addEventListener('input', async () => {
+        const query = searchInput.value;
+        if (query.length > 2) {
+            const response = await fetch(`/search-mice/?q=${query}`);
+            const mice = await response.json();
+            searchResults.innerHTML = '';
+            mice.forEach(mouse => {
+                if (!selectedMouseIds.has(mouse.id)) {
+                    const result = document.createElement('div');
+                    result.textContent = mouse.mouse_number;
+                    result.onclick = () => addMouse(mouse);
+                    searchResults.appendChild(result);
+                }
+            });
+        }
+    });
+
+    function addMouse(mouse) {
+        selectedMouseIds.add(mouse.id);
+        const mouseBadge = document.createElement('span');
+        mouseBadge.textContent = mouse.mouse_number;
+        mouseBadge.classList.add('badge');
+        mouseBadge.onclick = () => removeMouse(mouse.id, mouseBadge);
+        selectedMice.appendChild(mouseBadge);
+
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'mice';
+        hiddenInput.value = mouse.id;
+        hiddenInput.id = `mouse-${mouse.id}`;
+        document.getElementById('cageForm').appendChild(hiddenInput);
+    }
+
+    function removeMouse(mouseId, badge) {
+        selectedMouseIds.delete(mouseId);
+        badge.remove();
+        document.getElementById(`mouse-${mouseId}`).remove();
+    }
+</script>
+
+<style>
+    .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        margin: 5px;
+        border-radius: 15px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+    }
+</style>
+
+{% endblock %}

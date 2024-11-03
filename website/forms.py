@@ -67,3 +67,87 @@ class TeamForm(forms.ModelForm):
     class Meta:
         model = Team
         fields = ['name']
+
+class CageForm(forms.ModelForm):
+    class Meta:
+        model = Cage
+        fields = ['cage_number', 'cage_type', 'location']
+
+class TransferRequestForm(forms.ModelForm):
+    class Meta:
+        model = TransferRequest
+        fields = ['mouse', 'source_cage', 'destination_cage', 'comments']
+        widgets = {
+            'comments': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Enter any additional comments...'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Initially set the querysets for the fields
+        self.fields['mouse'].queryset = Mouse.objects.exclude(state='deceased')
+        self.fields['source_cage'].queryset = Cage.objects.all()
+        self.fields['destination_cage'].queryset = Cage.objects.all()
+
+        # if 'mouse' in self.data:
+        #     try:
+        #         mouse_id = int(self.data.get('mouse'))
+        #         # Find the current cage for the selected mouse
+        #         current_cage_history = CageHistory.objects.filter(
+        #             mouse_id=mouse_id,
+        #             end_date__isnull=True
+        #         ).first()
+
+        #         if current_cage_history:
+        #             # Autofill the source cage field
+        #             self.fields['source_cage'].initial = current_cage_history.cage_id
+        #             # Exclude the source cage from the destination cage options
+        #             self.fields['destination_cage'].queryset = Cage.objects.exclude(cage_id=current_cage_history.cage_id.cage_id)
+        #     except (ValueError, TypeError):
+        #         pass  # Handle the case where mouse ID is not valid
+        # elif self.instance.pk:  # If editing an existing request
+        #     current_cage_history = CageHistory.objects.filter(
+        #         mouse_id=self.instance.mouse.id,
+        #         end_date__isnull=True
+        #     ).first()
+        #     if current_cage_history:
+        #         self.fields['source_cage'].initial = current_cage_history.cage_id
+        #         self.fields['destination_cage'].queryset = Cage.objects.exclude(id=current_cage_history.cage_id.id)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        source_cage = cleaned_data.get("source_cage")
+        destination_cage = cleaned_data.get("destination_cage")
+
+        if source_cage and destination_cage and source_cage == destination_cage:
+            self.add_error('destination_cage', "The destination cage cannot be the same as the source cage.")
+
+        return cleaned_data
+
+class BreedingRequestForm(forms.ModelForm):
+    class Meta:
+        model = BreedingRequest
+        fields = ['male_mouse', 'female_mouse', 'cage', 'comments']
+        widgets = {
+            'comments': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Enter any additional comments...'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Optionally filter the mice and cages in the form initialization
+        self.fields['male_mouse'].queryset = Mouse.objects.filter(sex='M')
+        self.fields['female_mouse'].queryset = Mouse.objects.filter(sex='F')
+        self.fields['cage'].queryset = Cage.objects.all()
+
+class CullingRequestForm(forms.ModelForm):
+    class Meta:
+        model = CullingRequest
+        fields = ['mouse', 'comments']
+        widgets = {
+            'comments': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Enter any additional comments...'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Optionally filter the mice in the form initialization
+        self.fields['mouse'].queryset = Mouse.objects.exclude(state='deceased')

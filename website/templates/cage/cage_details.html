@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="cage-details">
+    <h1>{{ cage.cage_number }}</h1>
+    <p>Type: {{ cage.cage_type }}</p>
+    <p>Location: {{ cage.location }}</p>
+    <p>Created on: {{ cage.created_at|date:"F j, Y" }}</p>
+
+    <h2>Current Mice:</h2>
+    <ul>
+        {% for mouse in cage.cagehistory_set.all %}
+            {% if mouse.end_date == None %}
+                <li>{{ mouse.mouse_id }}</li>
+            {% endif %}
+        {% empty %}
+            <li>No mice in this cage.</li>
+        {% endfor %}
+    </ul>
+
+    
+</div>
+
+<!-- Optional styling for the cage details page -->
+<style>
+    .cage-details {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .cage-details h1 {
+        font-size: 2rem;
+        color: #333;
+    }
+    .cage-details p {
+        font-size: 1rem;
+        color: #666;
+    }
+    .cage-details ul {
+        list-style: none;
+        padding: 0;
+    }
+    .cage-details li {
+        font-size: 0.9rem;
+        color: #555;
+    }
+    .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    .actions .btn {
+        font-size: 0.9rem;
+    }
+</style>
+
+{% endblock %}

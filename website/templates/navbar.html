@@ -14,6 +14,12 @@
                     <a class="nav-link" href="{% url 'teams' %}">Teams</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{% url 'cages' %}">Cages</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'all_requests' %}">Requests</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="{% url 'index' %}">Link</a>
                 </li>
                 <li class="nav-item dropdown">
@@ -40,8 +46,8 @@
                             {{ user.username|slice:":1"|upper }}  <!-- Display the first letter of the username -->
                         </div>
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                        <li><a class="dropdown-item" href="{% url 'index' %}">Profile</a></li>
+                    <ul class="dropdown-menu" aria-labelledby="profileDropdown">
+                        <li><a class="dropdown-item" href="{% url 'user_profile' user.username %}">Profile</a></li>
                         <li><a class="dropdown-item" href="{% url 'index' %}">Settings</a></li>
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{% url 'logout_user' %}">Logout</a></li>

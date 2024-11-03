@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div>
+    {% if user.role == 'leader' %}
+    <a href="{% url 'create_cage' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Create Cage
+    </a>
+    {% endif %}
+    <div class="cage-container">
+        {% for item in cage_data %}
+            <div class="cage-card">
+                <h2>Cage <a href="{% url 'cage_details' item.cage.cage_id %}">{{ item.cage.cage_number }}</a></h2>
+                <p>Type: {{ item.cage.cage_type }}</p>
+                <p>Location: {{ item.cage.location }}</p>
+                <ul>
+                    {% for mouse in item.current_mice %}
+                        {% if mouse.sex == "M" %}
+                            <a href="{% url 'view_mouse' mouse.mouse_id %}"><img src="{% static 'media/male_mouse.svg' %}" alt="male_mouse" style="height: 1em;" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" title="Mouse - {{ mouse.mouse_id }}"></a>
+                        {% elif mouse.sex == "F" %}
+                            <a href="{% url 'view_mouse' mouse.mouse_id %}"><img src="{% static 'media/female_mouse.svg' %}" alt="female_mouse" style="height: 1em;" data-bs-toggle="tooltip" data-bs-html="true" data-bs-placement="top" title="Mouse - {{ mouse.mouse_id }}"></a>
+                        {% endif %}
+                    {% empty %}
+                        <li>No mice currently in this cage.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+
+<!-- Optional CSS to style the cage cards -->
+<style>
+    .cage-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+    }
+    .cage-card {
+        width: 200px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        background-color: #f9f9f9;
+    }
+    .cage-card h2 {
+        font-size: 1.2em;
+        margin-bottom: 10px;
+    }
+    .cage-card p {
+        margin: 5px 0;
+    }
+    .cage-card ul {
+        list-style-type: none;
+        padding: 0;
+    }
+</style>
+
+{% endblock %}
