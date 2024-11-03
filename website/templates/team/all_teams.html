@@ -2,36 +2,55 @@
 {% block content %}
 
 <div>
+    <!-- Button to Create Team (Visible only for 'leader' role) -->
     {% if user.role == 'leader' %}
-    <a href="{% url 'create_team' %}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Create Team
-    </a>
+        <a href="{% url 'create_team' %}" class="btn btn-primary mb-4">
+            <i class="fas fa-plus"></i> Create Team
+        </a>
     {% endif %}
-    
-    <!-- Gallery container for teams -->
+
+    <!-- Section for User's Teams -->
+    <h2>Your Teams</h2>
     <div class="team-gallery">
-        {% for item in team_data %}
+        {% for team in user_teams %}
             <div class="team-card">
-                <h2><a href="{% url 'team_details' item.team.name %}">{{ item.team.name }}</a></h2>
+                <h2><a href="{% url 'team_details' team.name %}">{{ team.name }}</a></h2>
                 <p>Members:</p>
                 <ul>
-                    {% for membership in item.team.teammembership_set.all %}
+                    {% for membership in team.teammembership_set.all %}
                         <li>{{ membership.user.username }}</li>
                     {% endfor %}
                 </ul>
-                
-                {% if not item.is_member %}
-                    <form action="{% url 'join_team' item.team.name %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-success">Join Team</button>
-                    </form>
-                {% endif %}
             </div>
+        {% empty %}
+            <p>You are not a member of any teams.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Section for Other Teams -->
+    <h2 class="mt-5">Other Teams</h2>
+    <div class="team-gallery">
+        {% for team in other_teams %}
+            <div class="team-card">
+                <h2><a href="{% url 'team_details' team.name %}">{{ team.name }}</a></h2>
+                <p>Members:</p>
+                <ul>
+                    {% for membership in team.teammembership_set.all %}
+                        <li>{{ membership.user.username }}</li>
+                    {% endfor %}
+                </ul>
+                <form action="{% url 'join_team' team.name %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Join Team</button>
+                </form>
+            </div>
+        {% empty %}
+            <p>No other teams available to join.</p>
         {% endfor %}
     </div>
 </div>
 
-<!-- Add custom CSS for the gallery layout and cards -->
+<!-- Custom CSS for gallery layout and team cards -->
 <style>
     /* Gallery layout */
     .team-gallery {

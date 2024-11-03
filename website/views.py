@@ -129,16 +129,20 @@ class MouseClass:
 class TeamClass:
     @login_required
     def all_teams(request):
+        # Fetch all teams with prefetch for users
         teams = Team.objects.prefetch_related('teammembership_set__user')
+
+        # Get names of teams the user is a member of
         user_team_names = TeamMembership.objects.filter(user=request.user).values_list('team__name', flat=True)
-        team_data = [
-            {
-                'team': team,
-                'is_member': team.name in user_team_names
-            }
-            for team in teams
-        ]
-        return render(request, 'team/all_teams.html', {'team_data': team_data})
+
+        # Separate user and other teams
+        user_teams = [team for team in teams if team.name in user_team_names]
+        other_teams = [team for team in teams if team.name not in user_team_names]
+
+        return render(request, 'team/all_teams.html', {
+            'user_teams': user_teams,
+            'other_teams': other_teams
+        })
     
     @login_required
     def join_team(request, team_name):
