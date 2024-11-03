@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- create_team.html -->
+<form method="post" id="teamForm">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <!-- Selected members (badges) will appear here -->
+    <div id="selectedMembers" class="badge-container"></div>
+
+    <label for="userSearch">Add Members:</label>
+    <input type="text" id="userSearch" placeholder="Search username...">
+    <div id="searchResults" class="search-results"></div>
+
+    <button type="submit" class="btn btn-primary">Create Team</button>
+</form>
+
+<!-- Add CSS for badge styling and layout -->
+<style>
+    .badge-container {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .badge {
+        background-color: #007bff;
+        color: white;
+        border-radius: 12px;
+        padding: 5px 10px;
+        margin: 5px;
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+    }
+    .badge .remove-btn {
+        margin-left: 8px;
+        font-weight: bold;
+        color: white;
+        cursor: pointer;
+    }
+    .search-results div {
+        background-color: #f1f1f1;
+        padding: 8px;
+        cursor: pointer;
+        border: 1px solid #ddd;
+        margin-top: 2px;
+    }
+    .search-results div:hover {
+        background-color: #e0e0e0;
+    }
+</style>
+
+<script>
+    const searchInput = document.getElementById('userSearch');
+    const searchResults = document.getElementById('searchResults');
+    const selectedMembers = document.getElementById('selectedMembers');
+    const teamForm = document.getElementById('teamForm');
+    let selectedUserIds = new Set();
+
+    // Perform AJAX search when typing
+    searchInput.addEventListener('input', async () => {
+        const query = searchInput.value;
+        if (query.length > 2) {
+            const response = await fetch(`/search-users/?q=${query}`);
+            const users = await response.json();
+            searchResults.innerHTML = '';
+            users.forEach(user => {
+                if (!selectedUserIds.has(user.id)) {
+                    const result = document.createElement('div');
+                    result.textContent = user.username;
+                    result.onclick = () => addMember(user);
+                    searchResults.appendChild(result);
+                }
+            });
+        }
+    });
+
+    // Add selected member as a badge
+    function addMember(user) {
+        selectedUserIds.add(user.id);
+
+        // Create a badge element for the user
+        const memberBadge = document.createElement('span');
+        memberBadge.classList.add('badge');
+        memberBadge.innerHTML = `${user.username} <span class="remove-btn">&times;</span>`;
+        
+        // Handle badge click for removal
+        memberBadge.querySelector('.remove-btn').onclick = () => removeMember(user.id, memberBadge);
+
+        // Append badge to the selected members container
+        selectedMembers.appendChild(memberBadge);
+
+        // Add hidden input to form for each selected member
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'members';
+        hiddenInput.value = user.id;
+        hiddenInput.id = `member-${user.id}`;
+        teamForm.appendChild(hiddenInput);
+
+        // Clear the search input and results
+        searchInput.value = '';
+        searchResults.innerHTML = '';
+    }
+
+    // Remove selected member
+    function removeMember(userId, badge) {
+        selectedUserIds.delete(userId);
+        badge.remove();
+        document.getElementById(`member-${userId}`).remove();
+    }
+</script>
+
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h1>Create Transfer Request</h1>
+    <!-- create_transfer_request.html -->
+    <form method="POST" id="transfer-request-form">
+        {% csrf_token %}
+        {{ form.mouse.label }} {{ form.mouse }}
+        {{ form.source_cage.label }} {{ form.source_cage }}
+        {{ form.destination_cage.label }} {{ form.destination_cage }}
+        {{ form.comments.label }} {{ form.comments }}
+        <br>
+        <button type="submit"class="btn btn-primary">Submit Transfer Request</button>
+        <a href="{% url 'all_requests' %}" class="btn btn-secondary">Back</a>
+    </form>
+    
+    <script>
+        document.getElementById('id_mouse').addEventListener('change', function() {
+            const mouseId = this.value;
+            if (mouseId) {
+                fetch(`/requests/get-transfer-data/?mouse_id=${mouseId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update the source cage
+                        const sourceCageField = document.getElementById('id_source_cage');
+                        sourceCageField.value = data.current_cage_id;  // Set the current cage as the source cage
+    
+                        // Clear existing options in destination cage
+                        const destinationCageField = document.getElementById('id_destination_cage');
+                        destinationCageField.innerHTML = '';
+    
+                        // Populate destination cage options
+                        data.destination_cages.forEach(cage => {
+                            const option = document.createElement('option');
+                            option.value = cage.cage_id;
+                            option.textContent = cage.cage_number;
+                            destinationCageField.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error fetching transfer data:', error));
+            }
+        });
+    </script>
+
+
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <ul>
+                {% for field, errors in form.errors.items %}
+                    <li>{{ field }}: {{ errors|join:", " }}</li>
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

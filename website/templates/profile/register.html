@@ -19,15 +19,14 @@
             <!-- Privacy Policy and Terms of Service Checkboxes -->
             <div class="d-inline">
                 <div class="form-check mb-3">
-                    {{ form.terms_of_service }}  <!-- Use Django form field -->
-                    <label class="form-check-label" for="id_terms_of_service">
+                    <input type="checkbox" class="form-check-input" id="tos" required>
+                    <label class="form-check-label" for="tos">
                     I agree to the <a href="{% url 'terms_of_service' %}" target="_blank">Terms of Service</a>
                     </label>
                 </div>
-
                 <div class="form-check mb-4">
-                    {{ form.privacy_policy }}  <!-- Use Django form field -->
-                    <label class="form-check-label" for="id_privacy_policy">
+                    <input type="checkbox" class="form-check-input" id="privacyPolicy" required>
+                    <label class="form-check-label" for="privacyPolicy">
                     I agree to the <a href="{% url 'privacy_policy' %}" target="_blank">Privacy Policy</a>
                     </label>
                 </div>

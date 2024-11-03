@@ -6,7 +6,7 @@
 <div class="header-container">
     <h1>Mice</h1>
     {% if user.role == 'leader' %}
-    <a href="{% url 'index' %}" class="btn btn-primary add-record-btn">
+    <a href="{% url 'add_mouse' %}" class="btn btn-primary add-record-btn">
         <i class="fas fa-plus"></i> Add Mouse
     </a>
     {% endif %}
@@ -33,7 +33,7 @@
         {% if mice %}
             {% for mouse in mice %}
                 <tr>
-                    <td>{{ mouse.mouse_id }}</td>
+                    <td><a href="{% url 'view_mouse' mouse.mouse_id %}">{{ mouse.mouse_id }}</a></td>
                     <td>{{ mouse.strain.name }}</td> <!-- Adjust to strain model's relevant field -->
                     <td>{{ mouse.tube_id }}</td>
                     <td>{{ mouse.dob }}</td>
@@ -42,7 +42,7 @@
                     <td>
                         {% if mouse.father %}
                             <!-- <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a> -->
-                            <a href="{% url 'index' %}">Mouse {{ mouse.father.mouse_id }}</a>
+                            <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a>
                         {% else %}
                             N/A
                         {% endif %}
@@ -51,7 +51,7 @@
                     <td>
                         {% if mouse.mother %}
                             <!-- <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a> -->
-                            <a href="{% url 'index' %}">Mouse {{ mouse.mother.mouse_id }}</a>
+                            <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a>
                         {% else %}
                             N/A
                         {% endif %}

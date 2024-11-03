@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Pending Cage Transfer Requests</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Mouse</th>
+            <th>From Cage</th>
+            <th>To Cage</th>
+            <th>Request Date</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transfer in pending_transfers %}
+        <tr>
+            <td>{{ transfer.mouse.mouse_id }}</td>
+            <td>{{ transfer.source_cage.cage_number }}</td>
+            <td>{{ transfer.destination_cage.cage_number }}</td>
+            <td>{{ transfer.request_date }}</td>
+            <td>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="transfer_id" value="{{ transfer.id }}">
+                    <button type="submit" name="action" value="approve">Approve</button>
+                    <button type="submit" name="action" value="reject">Reject</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
