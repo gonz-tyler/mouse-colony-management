@@ -49,12 +49,12 @@ def register(request):
     else:
         form = RegistrationForm()
 
-    return render(request, 'profile/register.html', {'form': form})
+    return render(request, 'registration/register.html', {'form': form})
 
 @login_required
 def user_profile(request, username):
     user = User.objects.get(username=username)
-    return render(request, 'profile/profile.html', {"user": user})
+    return render(request, 'registration/profile.html', {"user": user})
 
 # Generate genetic tree
 def genetic_tree(request, mouse_id):
