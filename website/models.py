@@ -124,6 +124,14 @@ class Mouse(models.Model):
             ancestors.append(self.father)
             ancestors.extend(self.father.get_ancestors())
         return ancestors
+    
+    def get_parents(self):
+        parents = []
+        if self.mother:
+            parents.append(self.mother)
+        if self.father:
+            parents.append(self.father)
+        return parents
 
     def get_descendants(self):
         descendants = list(self.mother_of.all()) + list(self.father_of.all())

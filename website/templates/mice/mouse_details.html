@@ -39,6 +39,7 @@
         {% if user.role != 'new_staff' %}
         <a href="{% url 'update_mouse' mouse.mouse_id %}" class="btn btn-success">Edit</a>
         {% endif %}
+        <a href="{% url 'genetic_tree' mouse.mouse_id %}" class="btn btn-primary">View Genetic Tree</a>
     </div>
 </div>
 
