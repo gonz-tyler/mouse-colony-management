@@ -7,7 +7,7 @@ urlpatterns = [
     path('legal/terms-of-service/', views.terms_of_service, name='terms_of_service'), # legal
     path('legal/privacy-policy/', views.privacy_policy, name='privacy_policy'), # legal
     path('', views.home_view, name='index'),  # Index page
-    path('login/', auth_views.LoginView.as_view(template_name='profile/login.html'), name='login'),  # Login page
+    path('login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),  # Login page
     path('register/', views.register, name='register'), # Register page
     path('logout/', views.logout_user, name="logout_user"),
     path('profile/<str:username>/', views.user_profile, name="user_profile"),
