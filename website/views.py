@@ -11,6 +11,7 @@ from django.utils import timezone
 from .decorators import role_required
 from .models import *
 from .forms import *
+import json
 
 from django.views.generic.edit import UpdateView
 
@@ -58,15 +59,24 @@ def user_profile(request, username):
 # Generate genetic tree
 def genetic_tree(request, mouse_id):
     mouse = get_object_or_404(Mouse, mouse_id=mouse_id)
-    ancestors = mouse.get_ancestors()
-    descendants = mouse.get_descendants()
+    
+    # Recursive function to get only parents and their parents recursively
+    def get_direct_ancestor_structure(mouse):
+        # Assuming `get_parents()` is a method that fetches direct parents only
+        ancestors = []
+        for parent in mouse.get_parents():  # Replace with actual logic to get parents
+            ancestors.append({
+                'name': f"Strain {parent.strain} - TubeID {parent.tube_id}",
+                'children': get_direct_ancestor_structure(parent)
+            })
+        return ancestors
 
-    context = {
-        'mouse': mouse,
-        'ancestors': ancestors,
-        'descendants': descendants,
+    tree_data = {
+        'name': f"Strain {mouse.strain} - TubeID {mouse.tube_id}",
+        'children': get_direct_ancestor_structure(mouse)
     }
-    return render(request, 'genetictree.html', context)
+
+    return render(request, 'genetictree.html', {'tree_data': json.dumps(tree_data), 'mouse': mouse})
 
 
 class MouseClass:
@@ -129,16 +139,20 @@ class MouseClass:
 class TeamClass:
     @login_required
     def all_teams(request):
+        # Fetch all teams with prefetch for users
         teams = Team.objects.prefetch_related('teammembership_set__user')
+
+        # Get names of teams the user is a member of
         user_team_names = TeamMembership.objects.filter(user=request.user).values_list('team__name', flat=True)
-        team_data = [
-            {
-                'team': team,
-                'is_member': team.name in user_team_names
-            }
-            for team in teams
-        ]
-        return render(request, 'team/all_teams.html', {'team_data': team_data})
+
+        # Separate user and other teams
+        user_teams = [team for team in teams if team.name in user_team_names]
+        other_teams = [team for team in teams if team.name not in user_team_names]
+
+        return render(request, 'team/all_teams.html', {
+            'user_teams': user_teams,
+            'other_teams': other_teams
+        })
     
     @login_required
     def join_team(request, team_name):

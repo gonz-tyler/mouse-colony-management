@@ -1,26 +1,69 @@
-<!-- genetictree.html -->
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="container">
-    <h1>Genetic Tree for {{ mouse }}</h1>
+    <h1>Genetic Tree for Mouse {{ mouse.mouse_id }} - Strain {{ mouse.strain }} - Tube ID {{ mouse.tube_id }}</h1>
+    <div id="tree"></div>
 
-    <h3>Ancestors</h3>
-    <ul>
-        {% for ancestor in ancestors %}
-            <li>{{ ancestor }}</li>
-        {% empty %}
-            <li>No ancestors found.</li>
-        {% endfor %}
-    </ul>
+    <!-- Embed tree data in a script tag to avoid JavaScript parsing issues -->
+    <script id="tree-data" type="application/json">
+        {{ tree_data|safe }}
+    </script>
 
-    <h3>Descendants</h3>
-    <ul>
-        {% for descendant in descendants %}
-            <li>{{ descendant }}</li>
-        {% empty %}
-            <li>No descendants found.</li>
-        {% endfor %}
-    </ul>
-</div>
+    <!-- Include D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        // Parse the JSON directly from the script tag
+        const treeData = JSON.parse(document.getElementById('tree-data').textContent);
+    
+    // Set dimensions and margins for the tree layout
+    const width = 800;
+    const height = 500;
+    const margin = {top: 20, right: 120, bottom: 20, left: 120};
+
+    // Append SVG object to the div with id "tree"
+    const svg = d3.select("#tree")
+        .append("svg")
+        .attr("viewBox", `0 0 ${width + margin.right + margin.left} ${height + margin.top + margin.bottom}`) // Use viewBox for responsiveness
+        .attr("preserveAspectRatio", "xMinYMin meet") // Maintain aspect ratio
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Create the D3 tree layout
+    const treeLayout = d3.tree().size([height, width]);
+
+    // Convert the data to a hierarchy and calculate positions
+    const root = d3.hierarchy(treeData);
+    treeLayout(root);
+
+    // Links between nodes
+    svg.selectAll(".link")
+        .data(root.links())
+        .enter().append("path")
+        .attr("class", "link")
+        .attr("d", d3.linkHorizontal()
+            .x(d => d.y)
+            .y(d => d.x))
+        .style("fill", "none")
+        .style("stroke", "#ccc")
+        .style("stroke-width", "2px");
+
+    // Nodes for each mouse
+    const node = svg.selectAll(".node")
+        .data(root.descendants())
+        .enter().append("g")
+        .attr("class", "node")
+        .attr("transform", d => `translate(${d.y},${d.x})`);
+
+    // Circles for each node
+    node.append("circle")
+        .attr("r", 5)
+        .style("fill", d => d.children ? "#555" : "#999");
+
+    // Labels for each node
+    node.append("text")
+        .attr("dy", ".35em")
+        .attr("x", d => d.children ? -15 : 15)
+        .style("text-anchor", d => d.children ? "end" : "start")
+        .text(d => d.data.name);
+</script>
 {% endblock %}
