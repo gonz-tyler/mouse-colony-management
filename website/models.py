@@ -105,6 +105,8 @@ class Mouse(models.Model):
     cull_date = models.DateTimeField(null=True, blank=True)
     weaned = models.BooleanField(default=False)
     weaned_date = models.DateField(null=True, blank=True)
+    phenotype = models.CharField(max_length=255, blank=True, null=True)
+    genotype = models.CharField(max_length=255, blank=True, null=True)
     # change mouse to mousekeeper table
     #mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
 
