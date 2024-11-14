@@ -26,6 +26,21 @@ def terms_of_service(request):
 def privacy_policy(request):
     return render(request, 'legal/privacy-policy.html')
 
+def mouse_family_tree(request, mouse_id):
+    mouse = get_object_or_404(Mouse, mouse_id=mouse_id)
+    related_mice, edges = mouse.find_all_related_nodes_with_edges()
+
+    # Prepare the data for D3.js
+    nodes = [{'id': related_mouse.mouse_id, 'label': f"{related_mouse.strain} - {related_mouse.tube_id}"} for related_mouse in related_mice]
+    links = [{'source': edge[0].mouse_id, 'target': edge[1].mouse_id} for edge in edges]
+
+    return render(request, 'mouse_family_tree.html', {
+        'mouse': mouse,
+        'nodes': nodes,
+        'links': links,
+    })
+
+
 
 @login_required
 def home_view(request):

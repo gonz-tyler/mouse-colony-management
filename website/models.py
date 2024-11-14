@@ -125,6 +125,82 @@ class Mouse(models.Model):
             ancestors.extend(self.father.get_ancestors())
         return ancestors
     
+    def find_all_related_nodes_with_edges(self, edges=None, visited=None):
+        if visited is None:
+            visited = set()
+
+        if edges is None:
+            edges = []
+        
+        # Add the current node to the visited set
+        visited.add(self)
+        
+        # Traverse upward to ancestors, and record edges
+        if self.father: #  and self.father not in visited
+            edges.append((self.father, self))  # Father to child
+            self.father.find_all_related_nodes_with_edges(edges, visited)
+        if self.mother: #  and self.mother not in visited
+            edges.append((self.mother, self))  # Mother to child
+            self.mother.find_all_related_nodes_with_edges(edges, visited)
+
+        if self.sex == 'M':
+            # Get children where the current mouse is set as their father
+            for child in self.father_of.all():
+                if child not in visited:
+                    edges.append((self, child))  # Parent-child relationship
+                    child.find_all_related_nodes_with_edges(edges, visited)
+        else:
+            # Get children where the current mouse is set as their mother
+            for child in self.mother_of.all():
+                if child not in visited:
+                    edges.append((self, child))  # Parent-child relationship
+                    child.find_all_related_nodes_with_edges(edges, visited)
+        
+        return visited, edges
+
+    
+    def get_all_descendants(self, mouse, descendants=None, level=0):
+        if descendants is None:
+            descendants = set()
+        
+        # Find all children where this mouse is the mother or father
+        children = Mouse.objects.filter(models.Q(mother=mouse) | models.Q(father=mouse))
+        
+        for child in children:
+            descendants.add((child, level + 1))
+            self.get_all_descendants(child, descendants, level + 1)
+            
+            # Find child's half-siblings (step-siblings)
+            half_siblings = Mouse.objects.filter(
+                models.Q(mother=child.mother) | models.Q(father=child.father)
+            ).exclude(id=child.id)
+            
+            for half_sibling in half_siblings:
+                descendants.add((half_sibling, level + 1))
+        
+        return descendants
+    
+    def get_siblings(self, mouse):
+        # Exclude the current mouse itself and look for other mice with the same mother or father
+        siblings = Mouse.objects.filter(
+            models.Q(mother=mouse.mother) | models.Q(father=mouse.father)
+        ).exclude(mouse_id=mouse.mouse_id)
+        
+        return siblings
+    
+    def get_complete_family_tree(self, mouse):
+        family_tree = {
+            'ancestors': self.get_all_ancestors(mouse),
+            'descendants': self.get_all_descendants(mouse),
+        }
+        
+        # Find all siblings
+        siblings = self.get_siblings(mouse)
+        family_tree['siblings'] = siblings
+        
+        # Optionally, add additional processing if needed
+        return family_tree
+    
     def get_parents(self):
         parents = []
         if self.mother:
