@@ -90,7 +90,9 @@ class Mouse(models.Model):
         ('BL', 'Bottom Left'),
         ('BR', 'Bottom Right'),
         ('TLBR', 'Top Left Bottom Right'),
+        ('TLBL', 'Top Left Bottom Left'),
         ('TRBL', 'Top Right Bottom Left'),
+        ('TRBR', 'Top Right Bottom Right'),
         ('TLTRBLBR', 'Top Left Top Right Bottom Left Bottom Right'),
     ]
     STATE_CHOICES = [('alive', 'Alive'), ('breeding', 'Breeding'), ('to_be_culled', 'To Be Culled'), ('deceased', 'Deceased')]

@@ -35,6 +35,8 @@
         
 
         <a onclick="history.back()" class="btn btn-secondary">Back</a>
+        <input type = "text" id = "weight" />
+        <a onclick="weight_update()" class="btn btn-secondary">Update weight</a>
         {% if user.role == 'leader' %}
         <a href="{% url 'delete_mouse' mouse.mouse_id %}" class="btn btn-danger">Delete</a>
         {% endif %}
@@ -42,6 +44,14 @@
         <a href="{% url 'update_mouse' mouse.mouse_id %}" class="btn btn-success">Edit</a>
         {% endif %}
         <a href="{% url 'genetic_tree' mouse.mouse_id %}" class="btn btn-primary">View Genetic Tree</a>
+
+        <script>
+            function weight_update(){
+                var updated_weight = document.getElementById("weight");
+                //code to update the database with the input (id = weight) 
+
+            }
+        </script>
     </div>
 </div>
 
