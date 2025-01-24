@@ -78,6 +78,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'website.context_processors.add_current_year'
             ],
         },
     },
@@ -101,18 +102,19 @@ WSGI_APPLICATION = 'mouse_colony_management.wsgi.application'
 # if 'DATABASE_URL' in os.environ:
 #     DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
 
-# Comment this out during local development
-# Remember to uncomment before pushing to GitHub 'main' branch
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': os.environ.get('DB_NAME'),
-#         'USER': os.environ.get('DB_USER'),
-#         'PASSWORD': os.environ.get('DB_PASSWORD'),
-#         'HOST': os.environ.get('DB_HOST'),
-#         'PORT': os.environ.get('DB_PORT'),
-#     }
-# }
+# Uncomment during local development
+# .env must be present
+# Comment before pushing to GitHub 'main' branch
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': env('DB_NAME'),
+#        'USER': 'root',                        # MySQL user, usually 'root' for local dev
+#        'PASSWORD': 'Problems82456!?',         # Your MySQL password
+#        'HOST': 'localhost',                   # Host where MySQL is running (use 'localhost' for local setup)
+#        'PORT': '3306',                        # Default MySQL port
+#    }
+#}
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -124,7 +126,7 @@ DATABASES = {
 # Uncomment during local development
 # .env must be present
 # Comment before pushing to GitHub 'main' branch
-# DATABASES = {
+#DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
 #         'NAME': env('DB_NAME'),

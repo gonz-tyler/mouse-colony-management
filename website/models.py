@@ -45,6 +45,8 @@ class User(AbstractUser):
     ]
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='new_staff')
 
+    email = models.EmailField(unique=True)  # Add unique constraint to email
+
     # Enforce email validation
     def clean(self):
         super().clean()

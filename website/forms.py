@@ -20,6 +20,11 @@ class RegistrationForm(UserCreationForm):
         email = self.cleaned_data.get("email")
         if email and not email.endswith('@abdn.ac.uk'):
             raise ValidationError(_('Email must be an @abdn.ac.uk address.'))
+        
+        # Check if the email already exists in the database
+        if User.objects.filter(email=email).exists():
+            raise ValidationError(_('This email address is already in use.'))
+        
         return email
 
     def save(self, commit=True):
