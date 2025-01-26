@@ -11,17 +11,17 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 {% if user.is_authenticated %}
-                <li class="nav-item">
-                    <a class="nav-link" aria-current="page" href="{% url 'index' %}">Dashboard</a>
+                <li class="nav-item px-4">
+                    <a class="nav-link fs-4" aria-current="page" href="{% url 'index' %}">Dashboard</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'teams' %}">Teams</a>
+                <li class="nav-item px-4">
+                    <a class="nav-link fs-4" href="{% url 'teams' %}">Teams</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'cages' %}">Cages</a>
+                <li class="nav-item px-4">
+                    <a class="nav-link fs-4" href="{% url 'cages' %}">Cages</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'all_requests' %}">Requests</a>
+                <li class="nav-item px-4">
+                    <a class="nav-link fs-4" href="{% url 'all_requests' %}">Requests</a>
                 </li>
                 <!-- <li class="nav-item">
                     <a class="nav-link" href="{% url 'index' %}">Link</a>
