@@ -9,17 +9,25 @@
                 {% csrf_token %}
 
                 <!-- Profile Picture Field -->
-                <div class="mb-3">
-                    <label for="id_profile_picture" class="form-label">Profile Picture</label>
-                    <input type="file" id="profile-picture-input" name="profile_picture" class="form-control" accept="image/*" onchange="previewImage(event)">
-                    
-                    <!-- Preview of the profile picture -->
-                    <div class="mt-2" id="profile-picture-preview">
+                <div class="mb-3 text-center">
+                    <!-- Profile Picture Container -->
+                    <div class="profile-picture-container">
+                        <!-- Display existing profile picture or placeholder -->
                         {% if user.profile_picture %}
-                            <img src="{{ user.profile_picture.url }}" alt="Profile Picture" id="profile-image-preview" class="img-thumbnail" style="max-width: 200px; height: auto;">
+                            <img src="{{ user.profile_picture.url }}" alt="Profile Picture" id="profile-image-preview" class="img-thumbnail profile-picture">
                         {% else %}
-                            <p>No profile picture selected.</p>
+                            <div class="profile-picture-container">
+                                <span>{{ user.username|slice:":1"|upper }}</span> <!-- Initial letter of the username -->
+                            </div>
                         {% endif %}
+                        
+                        <!-- Pencil Icon for editing -->
+                        <div class="edit-icon-container">
+                            <!-- File input that will trigger when you click anywhere in the container -->
+                            <input type="file" id="profile-picture-input" name="profile_picture" class="form-control d-none" accept="image/*" onchange="previewImage(event)">
+                            <!-- Pencil icon inside the container, for visual cue -->
+                            <label for="profile-picture-input" class="edit-icon"><i class="fa fa-pencil"></i></label>
+                        </div>
                     </div>
                 </div>
 

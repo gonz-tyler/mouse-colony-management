@@ -29,7 +29,20 @@
             <div class="card-body">
                 <h3 class="card-title">User Information</h3>
                 {% if user.profile_picture %}
-                <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="img-fluid" style="max-width: 150px; height: auto;">
+                <!-- Profile Picture Field -->
+                <div class="mb-3 text-center">
+                    <!-- Profile Picture Container -->
+                    <div class="profile-picture-container">
+                        <!-- Display existing profile picture or placeholder -->
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}" alt="Profile Picture" id="profile-image-preview" class="img-thumbnail profile-picture">
+                        {% else %}
+                            <div class="profile-picture-container">
+                                <span>{{ user.username|slice:":1"|upper }}</span> <!-- Initial letter of the username -->
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
                 {% endif %}
                 <p><strong>Username:</strong> {{ user.username }}</p>
                 <p><strong>First Name:</strong> {{ user.first_name }}</p>
