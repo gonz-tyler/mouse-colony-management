@@ -56,6 +56,40 @@ def user_profile(request, username):
     user = User.objects.get(username=username)
     return render(request, 'registration/profile.html', {"user": user})
 
+# DELETE ACCOUNT
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        user = request.user
+
+        # Prevent deletion of superuser accounts
+        if user.is_superuser:
+            messages.error(request, "Admin accounts cannot be deleted.")
+            return render(request, 'registration/profile.html', {"user": user})
+
+        logout(request)  # Log the user out
+        user.delete()  # Delete the user account
+        messages.success(request, "Your account has been deleted successfully.")
+        return redirect('index')
+    return render(request, 'registration/profile.html', {"user": user})
+
+@login_required
+def edit_profile(request):
+    user = request.user
+    if request.method == 'POST':
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your profile has been updated successfully!")
+            return redirect('user_profile', username=request.user.username)
+    else:
+        form = ProfileUpdateForm(instance=user)
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'registration/edit_profile.html', context)
+
 # Generate genetic tree
 def genetic_tree(request, mouse_id):
     mouse = get_object_or_404(Mouse, mouse_id=mouse_id)

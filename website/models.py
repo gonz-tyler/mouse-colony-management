@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 import datetime as dt
+import os
 
 
     
@@ -47,6 +48,8 @@ class User(AbstractUser):
 
     email = models.EmailField(unique=True)  # Add unique constraint to email
 
+    profile_picture = models.ImageField(upload_to="static/media/profile_pictures/", blank=True, null=True)
+
     # Enforce email validation
     def clean(self):
         super().clean()
@@ -55,6 +58,16 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         self.full_clean()  # Calls the clean method before saving
+        # Check if a profile picture is already set and if it is a new picture
+        if self.pk:
+            # If there's an old profile picture, delete it
+            old_picture = User.objects.get(pk=self.pk).profile_picture
+            if old_picture and old_picture != self.profile_picture:
+                # Delete the old profile picture file if it exists
+                if old_picture.path:
+                    os.remove(old_picture.path)
+
+        # Save the new profile picture
         super().save(*args, **kwargs)
 
 # ---------- Team Model ----------

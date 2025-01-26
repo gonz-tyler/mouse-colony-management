@@ -116,26 +116,26 @@ WSGI_APPLICATION = 'mouse_colony_management.wsgi.application'
 #    }
 #}
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL')
-    )
-}
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=os.environ.get('DATABASE_URL')
+#     )
+# }
 
 
 # Uncomment during local development
 # .env must be present
 # Comment before pushing to GitHub 'main' branch
-#DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': env('DB_NAME'),
-#         'USER': env('DB_USER'),
-#         'PASSWORD': env('DB_PASSWORD'),
-#         'HOST': env('DB_HOST'),
-#         'PORT': env('DB_PORT'),
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
+    }
+}
 
 
 # Password validation
@@ -175,6 +175,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',  # Replace with the actual folder containing your static files
+]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files

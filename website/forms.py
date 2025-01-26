@@ -13,7 +13,7 @@ class RegistrationForm(UserCreationForm):
 
     class Meta:
         model = User  # Use your custom User model
-        fields = ("username", "first_name", "last_name", "email", "password1", "password2", "role") #, "terms_of_service", "privacy_policy")
+        fields = ("profile_picture", "username", "first_name", "last_name", "email", "password1", "password2", "role") #, "terms_of_service", "privacy_policy")
 
     def clean_email(self):
         # This method will be called automatically to clean the email field
@@ -33,6 +33,11 @@ class RegistrationForm(UserCreationForm):
         if commit:
             user.save()
         return user
+    
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['profile_picture', 'username', 'first_name', 'last_name', 'role']
     
 class AddMouseForm(forms.ModelForm):
     team = forms.ModelChoiceField(queryset=Team.objects.none(), required=False, label='Select Team')

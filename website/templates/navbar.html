@@ -1,6 +1,10 @@
+{% load static %}
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
-        <a class="navbar-brand" href="{% url 'index' %}">Mouse Manager</a>
+        <a class="navbar-brand" href="{% url 'index' %}">
+            <img src="{% static 'media/logo.png' %}" alt="Mouse Manager Logo" height="100">
+        </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -19,7 +23,7 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'all_requests' %}">Requests</a>
                 </li>
-                <li class="nav-item">
+                <!-- <li class="nav-item">
                     <a class="nav-link" href="{% url 'index' %}">Link</a>
                 </li>
                 <li class="nav-item dropdown">
@@ -35,25 +39,31 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link disabled">Disabled</a>
-                </li>
+                </li> -->
                 {% endif %}
             </ul>
             {% if user.is_authenticated %}
-            <div class="d-flex align-items-center">
-                <div class="dropdown">
-                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="{% url 'index' %}" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="profile-icon rounded-circle" style="width: 40px; height: 40px; background-color: #007bff; color: white; display: flex; justify-content: center; align-items: center;">
-                            {{ user.username|slice:":1"|upper }}  <!-- Display the first letter of the username -->
-                        </div>
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="profileDropdown">
-                        <li><a class="dropdown-item" href="{% url 'user_profile' user.username %}">Profile</a></li>
-                        <li><a class="dropdown-item" href="{% url 'index' %}">Settings</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{% url 'logout_user' %}">Logout</a></li>
-                    </ul>
+                <div class="d-flex align-items-center">
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="{% url 'index' %}" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if user.profile_picture %}
+                                <!-- Display profile picture in the bubble -->
+                                <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="img-thumbnail rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                            {% else %}
+                                <!-- Display the first letter of the username in a colored bubble -->
+                                <div class="profile-icon rounded-circle" style="width: 80px; height: 80px; background-color: #007bff; color: white; display: flex; justify-content: center; align-items: center;">
+                                    {{ user.username|slice:":1"|upper }}  <!-- Display the first letter of the username -->
+                                </div>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="profileDropdown">
+                            <li><a class="dropdown-item" href="{% url 'user_profile' user.username %}">Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'index' %}">Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout_user' %}">Logout</a></li>
+                        </ul>
+                    </div>
                 </div>
-            </div>
             {% endif %}
         </div>
     </div>

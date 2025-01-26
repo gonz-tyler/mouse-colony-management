@@ -87,6 +87,66 @@
             stroke: #ccc;
             stroke-width: 2px;
         }
+
+        /* Container for the profile picture */
+        .profile-picture-container {
+            position: relative;
+            display: inline-block;
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        /* Profile Picture - circle */
+        .profile-picture, .profile-placeholder {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 50%;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* Placeholder if no image is set */
+        .profile-placeholder {
+            background-color: #007bff;
+            color: white;
+            font-size: 1.5em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        /* Edit Icon Container */
+        .edit-icon-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6); /* Slight dark background */
+            border-radius: 50%;  /* Circular background */
+            display: flex; /* Flexbox for centering */
+            justify-content: center;
+            align-content: center;
+            align-items: center;
+            color: white;
+            font-size: 2em; /* Icon size */
+            opacity: 0; /* Initially hidden */
+            transition: opacity 0.3s ease; /* Smooth transition */
+        }
+
+        /* Show the edit icon on hover */
+        .profile-picture-container:hover .edit-icon-container {
+            opacity: 1; /* Make it visible on hover */
+        }
+
+        /* Hide the file input */
+        .d-none {
+            display: none;
+        }
     </style>
 </head>
 <body>

@@ -1,7 +1,9 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 from . import views
+from django.conf import settings
+from django.conf.urls.static import static
 urlpatterns = [
     # path('admin/', admin.site.urls),
     path('legal/terms-of-service/', views.terms_of_service, name='terms_of_service'), # legal
@@ -10,6 +12,9 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(), name='login'),  # Login page
     path('register/', views.register, name='register'), # Register page
     path('logout/', views.logout_user, name="logout_user"),
+    path('delete-account/', views.delete_account, name="delete_account"),
+    path('change-password/', auth_views.PasswordChangeView.as_view(template_name='registration/change_password.html', success_url=reverse_lazy('index')), name='change_password'),
+    path('edit-profile/', views.edit_profile, name='edit_profile'),
     path('profile/<str:username>/', views.user_profile, name="user_profile"),
     path('genetic-tree/<int:mouse_id>/', views.genetic_tree, name='genetic_tree'), # Genetic Tree page
 
@@ -54,3 +59,7 @@ urlpatterns = [
     path('requests/reject-culling/<int:culling_id>/', views.CullingRequestClass.reject_culling_request, name='reject_culling'),
 
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
