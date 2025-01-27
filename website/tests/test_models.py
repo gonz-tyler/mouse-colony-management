@@ -235,53 +235,114 @@ class RequestModelTest(TestCase):
         self.strain = Strain.objects.create(name='C57BL/6')
         self.user = User.objects.create_user(username='requester', email='requester@abdn.ac.uk', password='pass123')
         self.cage = Cage.objects.create(cage_number='C001', cage_type='Breeding', location='Room 101')
+        self.second_cage = Cage.objects.create(cage_number='C002', cage_type='Breeding', location='Room 101')
         self.mouse_male = Mouse.objects.create(strain=self.strain, tube_id=101, dob=dt.date(2023, 1, 1), sex='M', state='alive')
         self.mouse_female = Mouse.objects.create(strain=self.strain, tube_id=102, dob=dt.date(2023, 1, 1), sex='F', state='alive')
 
     def test_breeding_request(self):
         # Valid breeding request
-        request = Request.objects.create(
+        request = BreedingRequest.objects.create(
             requester=self.user,
-            mouse=self.mouse_male,
-            second_mouse=self.mouse_female,
+            male_mouse=self.mouse_male,
+            female_mouse=self.mouse_female,
             cage=self.cage,
-            request_type='breed'
+            status='pending'
+            
         )
         request.full_clean()  # Should pass validation
-        self.assertEqual(Request.objects.count(), 1)
+        self.assertEqual(BreedingRequest.objects.count(), 1)
 
     def test_invalid_breeding_request(self):
         # Breeding request with same-sex mice
-        request = Request(
+        request = BreedingRequest(
             requester=self.user,
-            mouse=self.mouse_male,
-            second_mouse=self.mouse_male,  # Same sex
+            male_mouse=self.mouse_male,
+            female_mouse=self.mouse_male,  # Same sex
             cage=self.cage,
-            request_type='breed'
+            status='pending'
         )
         with self.assertRaises(ValidationError):
             request.full_clean()
 
     def test_culling_request(self):
         # Valid culling request
-        cull_request = Request.objects.create(
+        cull_request = CullingRequest.objects.create(
             requester=self.user,
             mouse=self.mouse_male,
-            request_type='cull'
+            status='pending'
         )
         cull_request.full_clean()  # Should pass validation
-        self.assertEqual(Request.objects.count(), 1)
+        self.assertEqual(CullingRequest.objects.count(), 1)
 
     def test_invalid_culling_request(self):
-        # Culling request with a second mouse (shouldn't have one)
-        cull_request = Request(
+        # No Mouse
+        cull_request = CullingRequest(
             requester=self.user,
-            mouse=self.mouse_male,
-            second_mouse=self.mouse_female,
-            request_type='cull'
+            mouse=None,
+            status='pending'
         )
         with self.assertRaises(ValidationError):
             cull_request.full_clean()
+
+    def test_transfer_request(self):
+        # Valid transfer request from source cage to destination cage
+        transfer_request = TransferRequest.objects.create(
+            requester=self.user,
+            mouse=self.mouse_male,
+            source_cage=self.cage,
+            destination_cage=self.second_cage,
+            status='pending'  # Assuming 'pending' is the default status
+        )
+        transfer_request.full_clean()  # Should pass validation
+        self.assertEqual(TransferRequest.objects.count(), 1)
+
+    def test_invalid_transfer_request_same_cage(self):
+        # Invalid transfer request with source and destination cages being the same
+        transfer_request = TransferRequest(
+            requester=self.user,
+            mouse=self.mouse_male,
+            source_cage=self.cage,
+            destination_cage=self.cage,  # Same cage (should be invalid)
+            status='pending'
+        )
+        with self.assertRaises(ValidationError):
+            transfer_request.full_clean()
+
+    def test_invalid_transfer_request_missing_source_cage(self):
+        # Invalid transfer request missing source cage
+        transfer_request = TransferRequest(
+            requester=self.user,
+            mouse=self.mouse_male,
+            source_cage=None,  # Source cage is required, should raise validation error
+            destination_cage=self.second_cage,
+            status='pending'
+        )
+        with self.assertRaises(ValidationError):
+            transfer_request.full_clean()
+
+    def test_invalid_transfer_request_missing_destination_cage(self):
+        # Invalid transfer request missing destination cage
+        transfer_request = TransferRequest(
+            requester=self.user,
+            mouse=self.mouse_male,
+            source_cage=self.cage,
+            destination_cage=None,  # Destination cage is required, should raise validation error
+            status='pending'
+        )
+        with self.assertRaises(ValidationError):
+            transfer_request.full_clean()
+
+    def test_invalid_transfer_request_with_invalid_status(self):
+        # Invalid transfer request with an invalid status (outside the defined choices)
+        transfer_request = TransferRequest(
+            requester=self.user,
+            mouse=self.mouse_male,
+            source_cage=self.cage,
+            destination_cage=self.second_cage,
+            status='invalid_status'  # Invalid status (should raise validation error)
+        )
+        with self.assertRaises(ValidationError):
+            transfer_request.full_clean()
 
 class BreedModelTest(TestCase):
 

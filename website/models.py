@@ -417,6 +417,15 @@ class TransferRequest(models.Model):
     approval_date = models.DateTimeField(null=True, blank=True)
     comments = models.TextField(blank=True, null=True)
 
+    def clean(self):
+        # Ensure that destination_cage is set before checking
+        if self.destination_cage is None:
+            raise ValidationError({'destination_cage': 'Destination cage cannot be empty.'})
+        
+        # Custom validation to ensure source_cage and destination_cage are different
+        if self.source_cage == self.destination_cage:
+            raise ValidationError({'destination_cage': 'Destination cage cannot be the same as the source cage.'})
+
     def approve(self, approver):
         self.status = 'approved'
         self.approval_date = dt.datetime.now()
