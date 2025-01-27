@@ -29,7 +29,15 @@ A web-based Mouse Colony Management System built with Django and MySQL. This sys
 7. During installation you will set a username (`root` is recommended) and a password, keep track of these as they will be needed for the next step.
 8. Create a file called `.env` (the `.` at the beginning is important) and set out the parameters like this (make sure each variable is on a new line and there are no trailing whitespaces):
 
-<pre>```DB_NAME=mouse_colony_db DB_USER=your_username DB_PASSWORD=your_password DB_HOST=localhost DB_PORT=3306 CLOUDINARY_CLOUD_NAME=cloud_name CLOUDINARY_API_KEY=api_key CLOUDINARY_API_SECRET=secret_key EMAIL_USER=email@gmail.com EMAIL_USER_PASSWORD=password```</pre>
+<pre>DB_NAME=mouse_colony_db
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_HOST=localhost DB_PORT=3306
+CLOUDINARY_CLOUD_NAME=cloud_name
+CLOUDINARY_API_KEY=api_key
+CLOUDINARY_API_SECRET=secret_key
+EMAIL_USER=email@gmail.com
+EMAIL_USER_PASSWORD=password</pre>
 
 9. Make sure you are in the correct working directory, your command line should look something like this `...\software-engineering-3028\mouse_colony_management>`.
 10. Run `python database_startup.py` (only do this the first time).
