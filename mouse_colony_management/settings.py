@@ -109,6 +109,14 @@ WSGI_APPLICATION = 'mouse_colony_management.wsgi.application'
 #     )
 # }
 
+# GitHub Actions
+if 'DATABASE_URL' in os.environ:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL')
+        )
+    }
+
 
 # Uncomment during local development
 # .env must be present
