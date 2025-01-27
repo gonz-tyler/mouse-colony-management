@@ -9,7 +9,8 @@
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit" class="btn btn-primary w-100">Login</button>
-            <p class="d-flex justify-content-center">Don't have an account yet?<a href="{% url 'register' %}" class="d-flex justify-content-center px-2">Create One Now</a></p>           
+            <p class="d-flex justify-content-center">Don't have an account yet?<a href="{% url 'register' %}" class="d-flex justify-content-center px-2">Create One Now</a></p>  
+            <a href="{% url 'password_reset' %}" class="d-flex justify-content-center px-2">Forgot your password?</a>
         </form>
     </div>
 </div>

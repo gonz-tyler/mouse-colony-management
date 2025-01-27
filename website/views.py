@@ -26,6 +26,16 @@ def terms_of_service(request):
 def privacy_policy(request):
     return render(request, 'legal/privacy-policy.html')
 
+def password_reset(request):
+    return render(request, 'registration/password_reset_form.html')
+def password_reset_done(request):
+    return render(request, 'registration/password_reset_done.html')
+def password_reset_confirm(request):
+    return render(request, 'registration/password_reset_confirm.html')
+def password_reset_complete(request):
+    return render(request, 'registration/password_reset_complete.html')
+
+
 
 @login_required
 def home_view(request):
