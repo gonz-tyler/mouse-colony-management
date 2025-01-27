@@ -34,7 +34,7 @@ jobs:
     - name: Get Heroku Database URL
       id: heroku-db-url
       run: |
-        heroku config:get DATABASE_URL -a your-heroku-app-name
+        heroku config:get DATABASE_URL -a mouse-colony-management
       env:
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
 
