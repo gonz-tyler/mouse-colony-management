@@ -79,7 +79,12 @@
                         </div>
                         <div class="modal-body">
                             <p>Please type <strong>delete {{ user.username }}</strong> to confirm account deletion.</p>
-                            <input type="text" id="confirmation-input" class="form-control" placeholder="delete {{ user.username }}" style="font-style: italic;">
+                            <input type="text" id="confirmation-input" class="form-control" placeholder="delete {{ user.username }}" style="font-style: normal;" autocomplete="off" autocorrect="off" spellcheck="false">
+                            <style>
+                                #confirmation-input::placeholder {
+                                    font-style: italic; /* Make placeholder text italic */
+                                }
+                            </style>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
