@@ -39,10 +39,7 @@ jobs:
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
 
     - name: Set up Database Environment Variables
-      run: |
-        echo "Setting up DB environment variables"
-      env:
-        DATABASE_URL: ${{ steps.heroku-db-url.outputs.result }}
+      run: echo "DATABASE_URL=${{ steps.heroku-db-url.outputs.result }}" >> $GITHUB_ENV
 
     - name: Install Dependencies
       run: |
