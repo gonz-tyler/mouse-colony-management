@@ -52,6 +52,8 @@ EMAIL_USER_PASSWORD=password</pre>
 3. Set `LOCAL_DEVELOPMENT` variable to `True` in `settings.py`.
 4. Run `python manage.py runserver`.
 5. Before commiting to `main` remember to set `LOCAL_DEVELOPMENT` variable to `False` in `settings.py`.
+### Steps For Testing (Run Before Commiting to Main)
+1. With virtual environment activated run `python manage.py test website.tests`.
 
 ## Contributors
 
