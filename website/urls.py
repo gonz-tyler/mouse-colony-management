@@ -4,6 +4,7 @@ from django.contrib.auth import views as auth_views
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
+from .forms import UserPasswordResetForm
 urlpatterns = [
     # path('admin/', admin.site.urls),
     path('legal/terms-of-service/', views.terms_of_service, name='terms_of_service'), # legal
@@ -19,10 +20,11 @@ urlpatterns = [
     path('genetic-tree/<int:mouse_id>/', views.genetic_tree, name='genetic_tree'), # Genetic Tree page
 
     # Password reset URLs
-    path('password-reset/', views.password_reset, name='password_reset'),
-    path('password-reset/done/', views.password_reset_done, name='password_reset_done'),
-    path('reset/<uidb64>/<token>/', views.password_reset_confirm, name='password_reset_confirm'),
-    path('reset/done/', views.password_reset_complete, name='password_reset_complete'),
+    # path('password-reset/', views.password_reset, name='password_reset'),
+    path('password-reset/', auth_views.PasswordResetView.as_view(template_name='accounts/password_reset_form.html'), name='password_reset'),
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='accounts/password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='accounts/password_reset_confirm.html'), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='accounts/password_reset_complete.html'), name='password_reset_complete'),
 
     # --- mice ---
     path('mice/<int:mouse_id>/', views.MouseClass.view_mouse, name='view_mouse'),

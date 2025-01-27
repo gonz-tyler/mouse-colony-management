@@ -118,26 +118,26 @@ WSGI_APPLICATION = 'mouse_colony_management.wsgi.application'
 #    }
 #}
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL')
-    )
-}
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=os.environ.get('DATABASE_URL')
+#     )
+# }
 
 
 # Uncomment during local development
 # .env must be present
 # Comment before pushing to GitHub 'main' branch
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': env('DB_NAME'),
-#         'USER': env('DB_USER'),
-#         'PASSWORD': env('DB_PASSWORD'),
-#         'HOST': env('DB_HOST'),
-#         'PORT': env('DB_PORT'),
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST'),
+        'PORT': env('DB_PORT'),
+    }
+}
 
 
 # Password validation
@@ -188,28 +188,28 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = env('EMAIL_USER')  # Your Gmail address
-# EMAIL_HOST_PASSWORD = env('EMAIL_USER_PASSWORD')  # Your Gmail password (or app password if 2FA is enabled)
+EMAIL_HOST_USER = env('EMAIL_USER')  # Your Gmail address
+EMAIL_HOST_PASSWORD = env('EMAIL_USER_PASSWORD')  # Your Gmail password (or app password if 2FA is enabled)
 # HEROKU EMAIL CONFIG
-EMAIL_HOST_USER = os.environ.get('EMAIL_USER')  # Your Gmail address
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_USER_PASSWORD')  # Your Gmail password (or app password if 2FA is enabled)
+# EMAIL_HOST_USER = os.environ.get('EMAIL_USER')  # Your Gmail address
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_USER_PASSWORD')  # Your Gmail password (or app password if 2FA is enabled)
 
 DEFAULT_FROM_EMAIL = 'password_reset@gmail.com'
 
 
 # Cloudinary configuration Local Deployment
-# CLOUDINARY_STORAGE = {
-#     'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME'),
-#     'API_KEY': env('CLOUDINARY_API_KEY'),
-#     'API_SECRET': env('CLOUDINARY_API_SECRET'),
-# }
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': env('CLOUDINARY_API_KEY'),
+    'API_SECRET': env('CLOUDINARY_API_SECRET'),
+}
 
 # Cloudinary configuration Heroku Deployment
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
-}
+# CLOUDINARY_STORAGE = {
+#     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+#     'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+#     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+# }
 
 # Set Cloudinary as the default storage for media files
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

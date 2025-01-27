@@ -1,8 +1,20 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, PasswordResetForm
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from .models import *  # Import your custom User model
+
+
+class UserPasswordResetForm(PasswordResetForm):
+    def __init__(self, *args, **kwargs):
+        super(UserPasswordResetForm, self).__init__(*args, **kwargs)
+
+    email = forms.EmailField(label='', widget=forms.EmailInput(attrs={
+        'class': 'your-class',
+        'placeholder': 'Enter your email address',
+        'type': 'email',
+        'name': 'email'
+    }))
 
 class RegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)  # Keep email as required
