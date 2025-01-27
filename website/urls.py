@@ -18,6 +18,12 @@ urlpatterns = [
     path('profile/<str:username>/', views.user_profile, name="user_profile"),
     path('genetic-tree/<int:mouse_id>/', views.genetic_tree, name='genetic_tree'), # Genetic Tree page
 
+    # Password reset URLs
+    path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
+
     # --- mice ---
     path('mice/<int:mouse_id>/', views.MouseClass.view_mouse, name='view_mouse'),
     path('mice/add/', views.MouseClass.add_mouse, name='add_mouse'),
