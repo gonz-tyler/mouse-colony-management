@@ -53,6 +53,14 @@ class ProfileUpdateForm(forms.ModelForm):
     
 class AddMouseForm(forms.ModelForm):
     team = forms.ModelChoiceField(queryset=Team.objects.none(), required=False, label='Select Team')
+    earmark = forms.MultipleChoiceField(
+        choices=Mouse.CLIPPED_CHOICES,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        required=False,
+        label='Earmark (Clipping)'
+    )
+    strain = forms.ModelChoiceField(queryset=Strain.objects.all(), required=False, label='Select Strain')
+    new_strain = forms.CharField(max_length=100, required=False, label='New Strain')
 
     class Meta:
         model = Mouse
@@ -63,10 +71,16 @@ class AddMouseForm(forms.ModelForm):
         widgets = {
             'tube_id': forms.NumberInput(attrs={'class': 'form-control'}),
             'dob': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'sex': forms.RadioSelect(attrs={'class': 'form-check-input'}),
             'clipped_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'cull_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'weaned_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         }
+
+    def clean_earmark(self):
+        """Clean earmark data and convert it to a comma-separated string."""
+        earmark_choices = self.cleaned_data.get('earmark', [])
+        return earmark_choices
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)  # Get the user from the keyword arguments
@@ -74,6 +88,9 @@ class AddMouseForm(forms.ModelForm):
 
         # Set the default value for the state field
         self.fields['state'].initial = 'alive'  # Default state to 'alive'
+
+        self.fields['sex'].empty_label = None
+        self.fields['sex'].required = True
         
         # Limit the father choices to male mice
         self.fields['father'].queryset = Mouse.objects.filter(sex='M')
@@ -81,9 +98,52 @@ class AddMouseForm(forms.ModelForm):
         # Limit the mother choices to female mice
         self.fields['mother'].queryset = Mouse.objects.filter(sex='F')
 
+        # Allow user to select existing strains or add a new one.
+        self.fields['strain'].empty_label = None
+        self.fields['strain'].queryset = Strain.objects.all()
+
+        # If the mouse has existing earmark choices, mark the relevant checkboxes as selected
+        if self.instance and self.instance.earmark:
+            # Split the comma-separated string into a list of codes
+            split_earmark = self.instance.earmark.split(',')
+            
+            # Ensure it's a list of valid choices (TL, TR, BL, BR)
+            valid_choices = [choice[0] for choice in self._meta.model.CLIPPED_CHOICES]
+            
+            # Filter the split_earmark list to include only valid choices
+            initial_choices = [choice for choice in split_earmark if choice in valid_choices]
+            
+            print(f"Initial earmark values (as list): {initial_choices} length: {len(initial_choices)}")
+            self.fields['earmark'].initial = initial_choices
+
         # Filter teams based on the current user's memberships
         if user is not None:
             self.fields['team'].queryset = Team.objects.filter(teammembership__user=user)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        strain = cleaned_data.get('strain')
+        new_strain = cleaned_data.get('new_strain')
+        
+        # If a new strain is provided, create it and assign to the Mouse instance
+        if new_strain:
+            strain = Strain.objects.create(name=new_strain)
+            cleaned_data['strain'] = strain
+            
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+
+        # Convert the list of earmark choices into a comma-separated string for saving to the model
+        if isinstance(instance.earmark, list):
+            instance.earmark = ','.join(instance.earmark)
+
+        if commit:
+            instance.save()
+
+        return instance
 
 class TeamForm(forms.ModelForm):
     class Meta:

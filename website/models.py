@@ -115,10 +115,11 @@ class Mouse(models.Model):
     strain = models.ForeignKey('Strain', on_delete=models.CASCADE)
     tube_id = models.IntegerField()
     dob = models.DateField()
-    sex = models.CharField(max_length=1, choices=SEX_CHOICES)
+    sex = models.CharField(max_length=1, choices=SEX_CHOICES, default='M', blank=False, null=False)
     father = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='father_of', limit_choices_to={'sex': 'M'})
     mother = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='mother_of', limit_choices_to={'sex': 'F'})
-    earmark = models.CharField(max_length=20, choices=CLIPPED_CHOICES, blank=True, null=True)
+    # earmark = models.CharField(max_length=20, choices=CLIPPED_CHOICES, blank=True, null=True)
+    earmark = models.JSONField(default=list, blank=True, null=True)
     clipped_date = models.DateField(null=True, blank=True)
     state = models.CharField(max_length=12, choices=STATE_CHOICES, default='alive', blank=False)
     cull_date = models.DateTimeField(null=True, blank=True)
@@ -127,6 +128,22 @@ class Mouse(models.Model):
     # change mouse to mousekeeper table
     #mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
 
+    def get_earmark_display(self):
+        """Return a readable string of earmark choices."""
+        # Map the list of choices to their corresponding labels in CLIPPED_CHOICES
+        choice_dict = dict(self.CLIPPED_CHOICES)
+        return ''.join(choice_dict.get(choice, choice) for choice in self.earmark)
+
+    def get_earmark_choices(self):
+        """Return the list of earmark choices directly."""
+        return self.earmark if self.earmark else []
+
+    def set_earmark_choices(self, choices):
+        """Set the list of earmark choices."""
+        if isinstance(choices, list):
+            self.earmark = choices
+        else:
+            raise ValueError("Choices must be a list of strings.")
 
     class Meta:
         unique_together = ('strain', 'tube_id')

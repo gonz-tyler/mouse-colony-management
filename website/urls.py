@@ -32,6 +32,9 @@ urlpatterns = [
     path('mice/update/<int:mouse_id>/', views.MouseClass.MouseUpdateView.as_view(), name='update_mouse'),
     path('mice/delete/<int:mouse_id>/', views.MouseClass.delete_mouse, name='delete_mouse'),
 
+    # --- strain ---
+    path('strain/add/', views.StrainClass.create_strain, name='create_strain'),
+
     # --- team ---
     path('team/create', views.TeamClass.create_team, name='create_team'),
     path('search-users/', views.TeamClass.search_users, name='search_users'),

@@ -100,24 +100,7 @@ WSGI_APPLICATION = 'mouse_colony_management.wsgi.application'
 #     }
 # }
 
-# Update the database configuration for Heroku (PostgreSQL)
-# if 'DATABASE_URL' in os.environ:
-#     DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
-
-# Uncomment during local development
-# .env must be present
-# Comment before pushing to GitHub 'main' branch
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.mysql',
-#        'NAME': env('DB_NAME'),
-#        'USER': 'root',                        # MySQL user, usually 'root' for local dev
-#        'PASSWORD': 'Problems82456!?',         # Your MySQL password
-#        'HOST': 'localhost',                   # Host where MySQL is running (use 'localhost' for local setup)
-#        'PORT': '3306',                        # Default MySQL port
-#    }
-#}
-
+# Heroku Database Configuration
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get('DATABASE_URL')

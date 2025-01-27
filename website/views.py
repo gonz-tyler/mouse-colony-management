@@ -188,6 +188,24 @@ class MouseClass:
         delete_it.delete()
         messages.success(request, record_deleted)
         return redirect('index')
+    
+class StrainClass:
+    def create_strain(request):
+        """Handles creating a new strain via AJAX."""
+        if request.method == 'POST':
+            new_strain_name = request.POST.get('new_strain')
+            if new_strain_name:
+                # Create the new strain
+                strain = Strain.objects.create(name=new_strain_name)
+                return JsonResponse({
+                    'success': True,
+                    'strain_id': strain.id,
+                    'strain_name': strain.name
+                })
+            else:
+                return JsonResponse({'success': False}, status=400)
+
+        return JsonResponse({'success': False}, status=400)
 
 class TeamClass:
     @login_required
