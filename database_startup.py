@@ -14,10 +14,6 @@ dataBase = mysql.connector.connect(
     host=host,
     user=user,
     passwd=passwd,
-    
-    #host="localhost",
-    #%user="root",
-    #passwd="Gonzaloescolar1!",
 
 )
 
