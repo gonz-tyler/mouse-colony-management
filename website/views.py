@@ -14,6 +14,7 @@ from .forms import *
 import json
 
 from django.views.generic.edit import UpdateView
+from django.contrib.auth.forms import PasswordResetForm
 
 # --- Messages ---
 record_added = "Record has been added successfully."
@@ -27,7 +28,15 @@ def privacy_policy(request):
     return render(request, 'legal/privacy-policy.html')
 
 def password_reset(request):
-    return render(request, 'registration/password_reset_form.html')
+    if request.method == "POST":
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            form.save(request=request)  # Sends the email with reset link
+            return redirect('password_reset_done')  # Redirect to done page
+    else:
+        form = PasswordResetForm()
+    
+    return render(request, 'registration/password_reset_form.html', {'form': form})
 def password_reset_done(request):
     return render(request, 'registration/password_reset_done.html')
 def password_reset_confirm(request):
