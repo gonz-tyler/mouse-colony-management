@@ -6,16 +6,15 @@
     <meta charset="UTF-8">
     <title>{{ user.username }}'s Profile</title>
     <script>
-        function confirmDeletion(event) {
-            event.preventDefault();
+        function confirmDeletion() {
             const username = "{{ user.username }}";
-            const confirmation = prompt(`Please type "delete ${username}" to confirm account deletion.`);
+            const confirmation = document.getElementById('confirmation-input').value;
 
             if (confirmation === `delete ${username}`) {
                 // If the user input matches the expected confirmation, submit the form
                 document.getElementById('delete-account-form').submit();
             } else {
-                alert("Account deletion canceled or invalid input. Make sure to type 'delete " + username + "'.");
+                alert("Account deletion canceled or invalid input. Make sure to type 'delete " + username + "' correctly.");
             }
         }
     </script>
@@ -66,11 +65,35 @@
         <!-- Optional: Delete Account Section -->
         <div class="mt-4">
             <h3>Danger Zone</h3>
-            <form id="delete-account-form" action="{% url 'delete_account' %}" method="post">
-                {% csrf_token %}
-                <button type="button" class="btn btn-danger" onclick="confirmDeletion(event)">Delete Account</button>
-            </form>
+            <!-- Button that triggers the modal -->
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                Delete Account
+            </button>
+            <!-- Modal for account deletion confirmation -->
+            <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteAccountModalLabel">Confirm Account Deletion</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Please type <strong>delete {{ user.username }}</strong> to confirm account deletion.</p>
+                            <input type="text" id="confirmation-input" class="form-control" placeholder="delete {{ user.username }}" style="font-style: italic;">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" onclick="confirmDeletion()">Confirm Deletion</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- Form to submit the account deletion -->
+        <form id="delete-account-form" action="{% url 'delete_account' %}" method="post" style="display: none;">
+            {% csrf_token %}
+        </form>
     </div>
 </body>
 </html>
