@@ -49,7 +49,7 @@ class RegistrationForm(UserCreationForm):
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ['profile_picture', 'username', 'first_name', 'last_name', 'role']
+        fields = ['profile_picture', 'username', 'first_name', 'last_name']
     
 class AddMouseForm(forms.ModelForm):
     team = forms.ModelChoiceField(queryset=Team.objects.none(), required=False, label='Select Team')

@@ -216,7 +216,7 @@ MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+# Checks if the project is running in a local development environment
 if LOCAL_DEVELOPMENT:
     CLOUDINARY_STORAGE = {
         'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME'),

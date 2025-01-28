@@ -47,6 +47,8 @@ urlpatterns = [
     # --- cage ---
     path('cages/', views.CageClass.all_cages, name='cages'),
     path('cage/create', views.CageClass.create_cage, name='create_cage'),
+    path('cage/<int:cage_id>/add_mouse_to_cage/', views.CageClass.add_mouse_to_cage, name='add_mouse_to_cage'),
+    path('cage/available-mice/', views.CageClass.fetch_available_mice, name='fetch_available_mice'),
     path('search-mice/', views.CageClass.search_mice, name='search_mice'),
     path('cage/<int:cage_id>/', views.CageClass.cage_details, name='cage_details'),
 

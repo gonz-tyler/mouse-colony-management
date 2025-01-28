@@ -307,14 +307,23 @@ class CageClass:
         cage = get_object_or_404(Cage, cage_id=cage_id)
 
         if request.method == 'POST':
-            mouse_id = request.POST.get('mouse_id')  # Assuming mouse_id is sent in the POST data
-            mouse = get_object_or_404(Mouse, id=mouse_id)
+            # Get the mouse ID from the form submission
+            mouse_id = request.POST.get('mouse_id')
 
-            # Check if mouse is already in a cage (with no end_date in CageHistory)
-            current_cage_history = CageHistory.objects.filter(mouse_id=mouse, end_date__isnull=True).first()
+            if not mouse_id:
+                return JsonResponse({'success': False, 'message': 'Mouse ID is required.'}, status=400)
+
+            try:
+                # Retrieve the mouse object using the mouse ID
+                mouse = Mouse.objects.get(mouse_id=mouse_id)
+            except Mouse.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Mouse not found.'}, status=404)
+
+            # Check if the mouse is already in a cage
+            current_cage_history = CageHistory.objects.filter(mouse_id=mouse.mouse_id, end_date__isnull=True).first()
 
             if current_cage_history:
-                # Mouse is already in a cage - create a transfer request
+                # Create a transfer request if the mouse is already in a cage
                 TransferRequest.objects.create(
                     requester=request.user,
                     mouse=mouse,
@@ -323,20 +332,21 @@ class CageClass:
                     status='pending',
                     request_date=timezone.now(),
                 )
-                return redirect('cage_details', cage_id=cage.cage_id)
-            else:
-                # Mouse is not in a cage, add it directly
-                CageHistory.objects.create(cage_id=cage, mouse_id=mouse, start_date=timezone.now(), end_date=None)
-                return redirect('cage_details', cage_id=cage.cage_id)
+                return JsonResponse({'success': True, 'message': 'Transfer request created successfully!'})
 
-        # Fetch all mice that are not currently in any cage
-        available_mice = Mouse.objects.exclude(cagehistory__end_date__isnull=False)
+            # Mouse is not currently in a cage; add it to the new cage
+            CageHistory.objects.create(cage_id=cage, mouse_id=mouse, start_date=timezone.now(), end_date=None)
+            return JsonResponse({'success': True, 'message': 'Mouse added to cage successfully!'})
 
-        context = {
-            'cage': cage,
-            'available_mice': available_mice,
-        }
-        return render(request, 'cage/add_mouse_to_cage.html', context)
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
+    
+    @login_required
+    def fetch_available_mice(request):
+        if request.method == 'GET' and request.headers.get("x-requested-with") == "XMLHttpRequest":  # Check if it's an AJAX request
+            available_mice = Mouse.objects.exclude(cagehistory__end_date__isnull=False)
+            mice_data = [{"mouse_id": mouse.mouse_id, "name": f"Mouse {mouse.mouse_id}"} for mouse in available_mice]
+            return JsonResponse({"success": True, "available_mice": mice_data})
+        return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
 
     @login_required
     @role_required(allowed_roles=['leader'])

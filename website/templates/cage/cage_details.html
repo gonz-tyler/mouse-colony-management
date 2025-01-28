@@ -18,10 +18,33 @@
         {% endfor %}
     </ul>
 
-    
+    <!-- Add Mouse Button -->
+    <div class="actions">
+        <button id="add-mouse-btn" class="btn btn-primary">Add Mouse to Cage</button>
+    </div>
+
+    <!-- Back to All Cages -->
+    <div class="actions">
+        <a href="{% url 'cages' %}" class="btn btn-secondary">Back to All Cages</a>
+    </div>
 </div>
 
-<!-- Optional styling for the cage details page -->
+<!-- Modal for Adding Mouse -->
+<div id="add-mouse-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Add Mouse to Cage: {{ cage.cage_number }}</h2>
+        <form id="add-mouse-form" method="post" action="{% url 'add_mouse_to_cage' cage.cage_id %}" 
+            data-fetch-mice-url="{% url 'add_mouse_to_cage' cage.cage_id %}">
+            {% csrf_token %}
+            <label for="mouse">Select Mouse:</label>
+            <select name="mouse_id" id="mouse"></select>
+            <button type="submit" class="btn btn-primary">Add Mouse</button>
+        </form>
+    </div>
+</div>
+
+<!-- Styles for the modal -->
 <style>
     .cage-details {
         max-width: 600px;
@@ -55,6 +78,122 @@
     .actions .btn {
         font-size: 0.9rem;
     }
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+    }
+    .modal-content h2 {
+        margin-bottom: 15px;
+    }
+    .modal-content .close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+    .modal select {
+        margin: 15px 0;
+        padding: 5px;
+        width: 100%;
+    }
+    .modal .btn {
+        margin-top: 10px;
+    }
 </style>
+
+<!-- JavaScript for modal behavior -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById("add-mouse-modal");
+    const addMouseBtn = document.getElementById("add-mouse-btn");
+    const closeModal = document.querySelector(".modal-content .close");
+
+    // Open the modal when the button is clicked
+    addMouseBtn.addEventListener("click", function () {
+        fetch('/cage/available-mice/', {  // Corrected the URL to match the one in urls.py
+            method: "GET",
+            headers: {
+                "x-requested-with": "XMLHttpRequest"  // Explicitly add this header
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const mouseSelect = document.getElementById("mouse");
+                mouseSelect.innerHTML = ""; // Clear the existing options
+
+                data.available_mice.forEach(mouse => {
+                    const option = document.createElement("option");
+                    option.value = mouse.mouse_id;
+                    option.textContent = mouse.name;
+                    mouseSelect.appendChild(option);
+                });
+                modal.style.display = "flex";
+            } else {
+                console.error("Error fetching available mice:", data.message);
+                alert("Failed to fetch available mice.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching available mice:", error);
+            alert("An error occurred while fetching available mice.");
+        });
+    });
+
+    // Close the modal when the close button is clicked
+    closeModal.addEventListener("click", function () {
+        modal.style.display = "none";
+    });
+
+    // Close the modal when clicking outside the modal content
+    window.addEventListener("click", function (event) {
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    });
+
+    // Submit the form via AJAX
+    const form = document.getElementById("add-mouse-form");
+    form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: "POST",
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                modal.style.display = "none";
+                location.reload();  // Optionally refresh the page
+            } else {
+                alert("Failed to add mouse. Please try again.");
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("An error occurred while adding the mouse.");
+        });
+    });
+});
+
+</script>
 
 {% endblock %}
