@@ -18,7 +18,7 @@ import dj_database_url # heroku database neccessary import
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-LOCAL_DEVELOPMENT = True
+LOCAL_DEVELOPMENT = False
 
 # Initialize environment variables
 env = environ.Env() 
