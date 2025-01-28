@@ -301,7 +301,7 @@ class CageClass:
         return render(request, 'cage/all_cages.html', context)
     
     @login_required
-    @role_required(allowed_roles=['leader'])
+    #@role_required(allowed_roles=['leader'])
     def add_mouse_to_cage(request, cage_id):
         """Add a mouse to a cage."""
         cage = get_object_or_404(Cage, cage_id=cage_id)
@@ -340,12 +340,39 @@ class CageClass:
 
         return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
     
+    #@login_required
+    #def fetch_available_mice(request):
+    #    if request.method == 'GET' and request.headers.get("x-requested-with") == "XMLHttpRequest":  # Check if it's an AJAX request
+    #        available_mice = Mouse.objects.exclude(cagehistory__end_date__isnull=False, cagehistory__cage_id=cage.cage_id)
+    #        mice_data = [{"mouse_id": mouse.mouse_id, "name": f"Mouse {mouse.mouse_id}"} for mouse in available_mice]
+    #        return JsonResponse({"success": True, "available_mice": mice_data})
+    #    return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
+    
     @login_required
     def fetch_available_mice(request):
         if request.method == 'GET' and request.headers.get("x-requested-with") == "XMLHttpRequest":  # Check if it's an AJAX request
-            available_mice = Mouse.objects.exclude(cagehistory__end_date__isnull=False)
+            cage_id = request.GET.get('cage_id')  # Retrieve the cage ID from the query parameters
+            if not cage_id:
+                return JsonResponse({"success": False, "message": "Cage ID is required."}, status=400)
+
+            try:
+                # Ensure the cage exists
+                cage = Cage.objects.get(cage_id=cage_id)
+            except Cage.DoesNotExist:
+                return JsonResponse({"success": False, "message": "Cage not found."}, status=404)
+
+            # Exclude mice with an active cage history in any cage or already in the specified cage
+            """available_mice = Mouse.objects.filter(
+                ~Q(cagehistory__end_date__isnull=True) | Q(cagehistory__isnull=True)
+            )"""
+            available_mice = Mouse.objects.exclude(
+                cagehistory__cage_id=cage_id
+            )
+
+            # Prepare the response data
             mice_data = [{"mouse_id": mouse.mouse_id, "name": f"Mouse {mouse.mouse_id}"} for mouse in available_mice]
             return JsonResponse({"success": True, "available_mice": mice_data})
+
         return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
 
     @login_required
@@ -372,9 +399,13 @@ class CageClass:
         # Get all current mice in this cage
         current_mice = cage.cagehistory_set.filter(end_date=None).select_related('mouse_id')
 
+        # Get the pending transfer requests for this cage (destination_cage = current cage)
+        pending_transfers = TransferRequest.objects.filter(destination_cage=cage, status='pending')
+
         context = {
             'cage': cage,
             'current_mice': current_mice,
+            'pending_transfers': pending_transfers,
         }
         return render(request, 'cage/cage_details.html', context)
     
