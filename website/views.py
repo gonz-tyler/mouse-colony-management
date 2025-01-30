@@ -367,6 +367,8 @@ class CageClass:
             )"""
             available_mice = Mouse.objects.exclude(
                 cagehistory__cage_id=cage_id
+            ).exclude(
+                Q(transfer_requests__status="pending")
             )
 
             # Prepare the response data
@@ -487,16 +489,31 @@ class AllRequestsClass:
         # Filter requests based on user role
         if request.user.role == 'breeder':
             # If the user is a breeder, show all requests
-            transfers = TransferRequest.objects.all()
-            breedings = BreedingRequest.objects.all()
-            cullings = CullingRequest.objects.all()
+            transfers = TransferRequest.objects.all().exclude(status="completed").exclude(status="rejected")
+            breedings = BreedingRequest.objects.all().exclude(status="completed").exclude(status="rejected")
+            cullings = CullingRequest.objects.all().exclude(status="completed").exclude(status="rejected")
+            completed_transfers = TransferRequest.objects.all().exclude(status="pending").exclude(status="approved")
+            completed_breedings = BreedingRequest.objects.all().exclude(status="pending").exclude(status="approved")
+            completed_cullings = CullingRequest.objects.all().exclude(status="pending").exclude(status="approved")
         else:
             # If the user is not a breeder, show only their requests
-            transfers = TransferRequest.objects.filter(requester=request.user)
-            breedings = BreedingRequest.objects.filter(requester=request.user)
-            cullings = CullingRequest.objects.filter(requester=request.user)
+            transfers = TransferRequest.objects.filter(requester=request.user).exclude(status="completed").exclude(status="rejected")
+            breedings = BreedingRequest.objects.filter(requester=request.user).exclude(status="completed").exclude(status="rejected")
+            cullings = CullingRequest.objects.filter(requester=request.user).exclude(status="completed").exclude(status="rejected")
+            completed_transfers = TransferRequest.objects.filter(requester=request.user).exclude(status="pending").exclude(status="approved")
+            completed_breedings = BreedingRequest.objects.filter(requester=request.user).exclude(status="pending").exclude(status="approved")
+            completed_cullings = CullingRequest.objects.filter(requester=request.user).exclude(status="pending").exclude(status="approved")
+        
+        context = {
+            "current_transfers": transfers,
+            "current_breedings": breedings,
+            "current_cullings": cullings,
+            "completed_transfers": completed_transfers,
+            "completed_breedings": completed_breedings,
+            "completed_cullings": completed_cullings,
+        }
 
-        return render(request, 'requests/all_requests.html', {'transfers': transfers, "breedings": breedings, "cullings":cullings})
+        return render(request, 'requests/all_requests.html', context)
 
 
 class TransferRequestClass:

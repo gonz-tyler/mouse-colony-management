@@ -1,0 +1,88 @@
+<!-- Completed Transfer Requests -->
+<h3>Completed Transfer Requests</h3>
+{% if completed_transfers %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Requester</th>
+            <th>Mouse</th>
+            <th>Source Cage</th>
+            <th>Destination Cage</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for transfer in completed_transfers %}
+        <tr>
+            <td>{{ transfer.id }}</td>
+            <td>{{ transfer.requester.username }}</td>
+            <td>{{ transfer.mouse.mouse_id }}</td>
+            <td>{{ transfer.source_cage.cage_id }}</td>
+            <td>{{ transfer.destination_cage.cage_id }}</td>
+            <td>{{ transfer.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No completed transfer requests.</p>
+{% endif %}
+
+<!-- Completed Breeding Requests -->
+<h3>Completed Breeding Requests</h3>
+{% if completed_breedings %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Requester</th>
+            <th>Male Mouse</th>
+            <th>Female Mouse</th>
+            <th>Cage</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for breeding in completed_breedings %}
+        <tr>
+            <td>{{ breeding.id }}</td>
+            <td>{{ breeding.requester.username }}</td>
+            <td>{{ breeding.male_mouse.mouse_id }}</td>
+            <td>{{ breeding.female_mouse.mouse_id }}</td>
+            <td>{{ breeding.cage.name }}</td>
+            <td>{{ breeding.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No completed breeding requests.</p>
+{% endif %}
+
+<!-- Completed Culling Requests -->
+<h3>Completed Culling Requests</h3>
+{% if completed_cullings %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Requester</th>
+            <th>Mouse</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for culling in completed_cullings %}
+        <tr>
+            <td>{{ culling.id }}</td>
+            <td>{{ culling.requester.username }}</td>
+            <td>{{ culling.mouse.mouse_id }}</td>
+            <td>{{ culling.get_status_display }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No completed culling requests.</p>
+{% endif %}
