@@ -14,17 +14,23 @@
                     <div class="profile-picture-container">
                         <!-- Display existing profile picture or placeholder -->
                         {% if user.profile_picture %}
-                            <img src="{{ user.profile_picture.url }}" alt="Profile Picture" id="profile-image-preview" class="img-thumbnail profile-picture">
+                        <!-- Display profile picture in the bubble -->
+                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture"
+                            class="img-thumbnail rounded-circle" style="width: 80px; height: 80px; object-fit: cover;"
+                            id="profile-image-preview">
                         {% else %}
-                            <div class="profile-picture-container">
-                                <span>{{ user.username|slice:":1"|upper }}</span> <!-- Initial letter of the username -->
-                            </div>
+                        <!-- Display the first letter of the username in a colored bubble -->
+                        <div class="profile-icon rounded-circle"
+                            style="width: 80px; height: 80px; background-color: #007bff; color: white; display: flex; justify-content: center; align-items: center;">
+                            {{ user.username|slice:":1"|upper }} <!-- Display the first letter of the username -->
+                        </div>
                         {% endif %}
-                        
+
                         <!-- Pencil Icon for editing -->
                         <div class="edit-icon-container">
                             <!-- File input that will trigger when you click anywhere in the container -->
-                            <input type="file" id="profile-picture-input" name="profile_picture" class="form-control d-none" accept="image/*" onchange="previewImage(event)">
+                            <input type="file" id="profile-picture-input" name="profile_picture"
+                                class="form-control d-none" accept="image/*" onchange="previewImage(event)">
                             <!-- Pencil icon inside the container, for visual cue -->
                             <label for="profile-picture-input" class="edit-icon"><i class="fa fa-pencil"></i></label>
                         </div>
@@ -36,9 +42,9 @@
                     <label for="id_username" class="form-label">Username</label>
                     {{ form.username }}
                     {% if form.username.errors %}
-                        <div class="text-danger small">
-                            {{ form.username.errors|striptags }}
-                        </div>
+                    <div class="text-danger small">
+                        {{ form.username.errors|striptags }}
+                    </div>
                     {% endif %}
                 </div>
 
@@ -47,9 +53,9 @@
                     <label for="id_first_name" class="form-label">First Name</label>
                     {{ form.first_name }}
                     {% if form.first_name.errors %}
-                        <div class="text-danger small">
-                            {{ form.first_name.errors|striptags }}
-                        </div>
+                    <div class="text-danger small">
+                        {{ form.first_name.errors|striptags }}
+                    </div>
                     {% endif %}
                 </div>
 
@@ -58,9 +64,9 @@
                     <label for="id_last_name" class="form-label">Last Name</label>
                     {{ form.last_name }}
                     {% if form.last_name.errors %}
-                        <div class="text-danger small">
-                            {{ form.last_name.errors|striptags }}
-                        </div>
+                    <div class="text-danger small">
+                        {{ form.last_name.errors|striptags }}
+                    </div>
                     {% endif %}
                 </div>
 
@@ -88,13 +94,13 @@
     function previewImage(event) {
         const file = event.target.files[0];
         const reader = new FileReader();
-        
-        reader.onload = function(e) {
+
+        reader.onload = function (e) {
             const preview = document.getElementById('profile-image-preview');
             preview.src = e.target.result;
             preview.style.display = 'block';  // Show the preview image
         }
-        
+
         // If no file selected, hide the preview
         if (file) {
             reader.readAsDataURL(file);
