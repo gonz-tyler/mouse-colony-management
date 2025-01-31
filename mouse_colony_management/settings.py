@@ -29,7 +29,7 @@ env.read_env(os.path.join(BASE_DIR, '.env'))  # Load the .env file
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rb-i&@y^6%6w=)d!ylgu31z6a^u*qkxwzw-9fa&_()z#xo&gb-'
+# SECRET_KEY = 'django-insecure-rb-i&@y^6%6w=)d!ylgu31z6a^u*qkxwzw-9fa&_()z#xo&gb-' #--- OLD KEY CHANGED FOR SECURITY ---#
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -235,6 +235,7 @@ if LOCAL_DEVELOPMENT:
     }
     EMAIL_HOST_USER = env('EMAIL_USER')  # Your Gmail address
     EMAIL_HOST_PASSWORD = env('EMAIL_USER_PASSWORD')  # Your Gmail password (or app password if 2FA is enabled)
+    SECRET_KEY = env('SECRET_KEY')
 else:
     CLOUDINARY_STORAGE = {
         'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
@@ -248,3 +249,4 @@ else:
     }
     EMAIL_HOST_USER = os.environ.get('EMAIL_USER')  # Your Gmail address
     EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_USER_PASSWORD')  # Your Gmail password (or app password if 2FA is enabled)
+    SECRET_KEY = os.environ.get('SECRET_KEY')
