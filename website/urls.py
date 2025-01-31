@@ -18,6 +18,9 @@ urlpatterns = [
     path('edit-profile/', views.edit_profile, name='edit_profile'),
     path('profile/<str:username>/', views.user_profile, name="user_profile"),
     path('genetic-tree/<int:mouse_id>/', views.genetic_tree, name='genetic_tree'), # Genetic Tree page
+    # User Management
+    path('manage-users/', views.manage_users, name='manage_users'),
+    path('update-user-role/<int:user_id>/', views.update_user_role, name='update_user_role'),
 
     # Password reset URLs
     # path('password-reset/', views.password_reset, name='password_reset'),
@@ -70,6 +73,7 @@ urlpatterns = [
     path('requests/cancel-culling/<int:transfer_id>', views.CullingRequestClass.cancel_culling_request, name="cancel_culling_request"),
     path('requests/approve-culling/<int:culling_id>/', views.CullingRequestClass.approve_culling_request, name='approve_culling'),
     path('requests/reject-culling/<int:culling_id>/', views.CullingRequestClass.reject_culling_request, name='reject_culling'),
+
 
 ]
 

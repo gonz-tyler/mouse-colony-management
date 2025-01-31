@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Manage Users</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    <!-- Form for updating user role -->
+                    <form method="POST" action="{% url 'update_user_role' user.id %}" id="role-form-{{ user.id }}">
+                        {% csrf_token %}
+                        <select class="form-select" name="role">
+                            <option value="new_staff" {% if user.role == "new_staff" %}selected{% endif %}>New Staff</option>
+                            <option value="staff" {% if user.role == "staff" %}selected{% endif %}>Staff</option>
+                        </select>
+                    </form>
+                </td>
+                <td>
+                    <!-- Button to trigger form submission -->
+                    <button class="btn btn-primary update-role-btn" data-user-id="{{ user.id }}"
+                        onclick="submitRoleForm({{ user.id }})">Update</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script>
+    // Function to submit the form when the update button is clicked
+    function submitRoleForm(userId) {
+        // Get the form associated with this user
+        const form = document.getElementById(`role-form-${userId}`);
+        // Submit the form
+        form.submit();
+    }
+</script>
+
+{% endblock %}

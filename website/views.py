@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
@@ -8,6 +9,7 @@ from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 from django.db.models import Q
 from django.utils import timezone
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .decorators import role_required
 from .models import *
 from .forms import *
@@ -48,9 +50,29 @@ def password_reset_complete(request):
 
 @login_required
 def home_view(request):
+    # Debugging: Log the page number
+    page_number = request.GET.get('page', 1)
+    logging.debug(f"Requested page number: {page_number}")
     # Fetch only the Mouse records that belong to the logged-in user
-    mice = Mouse.mice_managed_by_user(request.user)
-    return render(request, 'home.html', {'mice': mice})
+    mice = Mouse.mice_managed_by_user(request.user).order_by("tube_id")
+    paginator = Paginator(mice, 10)  # Show 10 users per page
+    # Get the page number from the request (default to 1)
+    page_number = request.GET.get('page')
+    
+    # Ensure the page number is valid, otherwise default to 1
+    try:
+        page_number = int(page_number) if page_number is not None else 1
+        if page_number < 1:
+            page_number = 1
+    except (ValueError, TypeError):  # Catch invalid page number (e.g., 'abc' or None)
+        page_number = 1  # Default to the first page if invalid
+
+    # Paginate the query
+    try:
+        page_obj = paginator.get_page(page_number)
+    except EmptyPage:
+        page_obj = paginator.get_page(paginator.num_pages)  # Fallback to the last page if page number is too high
+    return render(request, 'home.html', {'page_obj': page_obj})
 
 @login_required
 def logout_user(request):
@@ -130,6 +152,47 @@ def genetic_tree(request, mouse_id):
     }
 
     return render(request, 'genetictree.html', {'tree_data': json.dumps(tree_data), 'mouse': mouse})
+
+@login_required
+def manage_users(request):
+    """Allow lead users to manage other users' roles."""
+    if not request.user.role == 'leader':  # Ensure only leads can access
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect('index')
+
+    # Fetch all users excluding breeding users and other lead users
+    users = User.objects.exclude(role='breeder').exclude(role='leader')
+
+    return render(request, 'management/manage_users.html', {'users': users})
+
+
+@login_required
+def update_user_role(request, user_id):
+    """Update user roles (only allowed by lead users)."""
+    if request.method == "POST":
+        if not request.user.role == 'leader':  # Ensure only leads can change roles
+            messages.success(request, "You do not have permission to perform this action.")
+            return redirect('index')
+
+        user = get_object_or_404(User, id=user_id)
+
+        # Prevent changing roles of other leads
+        if user.role == 'leader':
+            messages.success(request, "You do not have permission to access this page.")
+            return redirect('manage_users')
+
+        new_role = request.POST.get('role')
+        if new_role in ['new_staff', 'staff']:  # Ensure only allowed roles
+            user.role = new_role
+            user.save()
+            messages.success(request, f"Role successfully updated to {new_role}.")
+            return redirect('manage_users')
+
+        messages.error(request, "Invalid role selected.")
+        return redirect('manage_users')
+
+    messages.error(request, "Invalid request.")
+    return redirect('manage_users')
 
 
 class MouseClass:
