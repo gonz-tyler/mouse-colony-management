@@ -71,27 +71,131 @@ def user_profile(request, username):
     user = User.objects.get(username=username)
     return render(request, 'registration/profile.html', {"user": user})
 
+# DELETE ACCOUNT
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        user = request.user
+
+        # Prevent deletion of superuser accounts
+        if user.is_superuser:
+            messages.error(request, "Admin accounts cannot be deleted.")
+            return render(request, 'registration/profile.html', {"user": user})
+
+        logout(request)  # Log the user out
+        user.delete()  # Delete the user account
+        messages.success(request, "Your account has been deleted successfully.")
+        return redirect('index')
+    return render(request, 'registration/profile.html', {"user": user})
+
+@login_required
+def edit_profile(request):
+    user = request.user
+    if request.method == 'POST':
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your profile has been updated successfully!")
+            return redirect('user_profile', username=request.user.username)
+    else:
+        form = ProfileUpdateForm(instance=user)
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'registration/edit_profile.html', context)
+
 # Generate genetic tree
 def genetic_tree(request, mouse_id):
     mouse = get_object_or_404(Mouse, mouse_id=mouse_id)
-    
-    # Recursive function to get only parents and their parents recursively
+    seen_nodes = set()  # Track seen nodes to avoid infinite recursion
+    seen_nodes.add(mouse.mouse_id)  # Add the current mouse to the set
+
+    # Recursive function to fetch all ancestors (parents & their parents)
     def get_direct_ancestor_structure(mouse):
-        # Assuming `get_parents()` is a method that fetches direct parents only
         ancestors = []
         for parent in mouse.get_parents():  # Replace with actual logic to get parents
-            ancestors.append({
-                'name': f"Strain {parent.strain} - TubeID {parent.tube_id}",
-                'children': get_direct_ancestor_structure(parent)
-            })
+            if parent.mouse_id not in seen_nodes:
+                seen_nodes.add(parent.mouse_id)
+                ancestors.append({
+                    'name': f"Strain {parent.strain} - TubeID {parent.tube_id}",
+                    'mouse_id': f"{parent.mouse_id}",
+                    'tube_id': f"{parent.tube_id}",
+                    'strain': f"{parent.strain}",
+                    'parents': get_direct_ancestor_structure(parent),  # Recursively add more ancestors
+                    'children': get_offspring_structure(parent)  # Leave as empty for parent, no need to have children at the parent level
+                })
         return ancestors
 
+    # Recursive function to fetch all descendants (children & their children)
+    def get_offspring_structure(mouse):
+        offspring = []
+        for child in mouse.get_descendants():  # Replace with actual logic to get children
+            if child.mouse_id not in seen_nodes:
+                seen_nodes.add(child.mouse_id)
+                offspring.append({
+                    'name': f"Strain {child.strain} - TubeID {child.tube_id}",
+                    'mouse_id': f"{child.mouse_id}",
+                    'tube_id': f"{child.tube_id}",
+                    'strain': f"{child.strain}",
+                    'parents': [],  # Leave as empty for children
+                    'children': get_offspring_structure(child)  # Recursively add more offspring
+                })
+        return offspring
+
+    # Construct tree data
     tree_data = {
         'name': f"Strain {mouse.strain} - TubeID {mouse.tube_id}",
-        'children': get_direct_ancestor_structure(mouse)
+        'mouse_id': f"{mouse.mouse_id}",
+        'tube_id': f"{mouse.tube_id}",
+        'strain': f"{mouse.strain}",
+        'parents': get_direct_ancestor_structure(mouse),  # Get ancestors
+        'children': get_offspring_structure(mouse)  # Get offspring
     }
+    print(tree_data)
 
     return render(request, 'genetictree.html', {'tree_data': json.dumps(tree_data), 'mouse': mouse})
+
+@login_required
+def manage_users(request):
+    """Allow lead users to manage other users' roles."""
+    if not request.user.role == 'leader':  # Ensure only leads can access
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect('index')
+
+    # Fetch all users excluding breeding users and other lead users
+    users = User.objects.exclude(role='breeder').exclude(role='leader')
+
+    return render(request, 'management/manage_users.html', {'users': users})
+
+
+@login_required
+def update_user_role(request, user_id):
+    """Update user roles (only allowed by lead users)."""
+    if request.method == "POST":
+        if not request.user.role == 'leader':  # Ensure only leads can change roles
+            messages.success(request, "You do not have permission to perform this action.")
+            return redirect('index')
+
+        user = get_object_or_404(User, id=user_id)
+
+        # Prevent changing roles of other leads
+        if user.role == 'leader':
+            messages.success(request, "You do not have permission to access this page.")
+            return redirect('manage_users')
+
+        new_role = request.POST.get('role')
+        if new_role in ['new_staff', 'staff']:  # Ensure only allowed roles
+            user.role = new_role
+            user.save()
+            messages.success(request, f"Role successfully updated to {new_role}.")
+            return redirect('manage_users')
+
+        messages.error(request, "Invalid role selected.")
+        return redirect('manage_users')
+
+    messages.error(request, "Invalid request.")
+    return redirect('manage_users')
 
 
 class MouseClass:

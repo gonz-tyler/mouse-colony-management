@@ -4,6 +4,11 @@
     <h1>Genetic Tree for Mouse {{ mouse.mouse_id }} - Strain {{ mouse.strain }} - Tube ID {{ mouse.tube_id }}</h1>
     <div id="tree"></div>
 
+    <!-- Section to display mouse information -->
+    <div id="mouse-info" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;">
+        <h3>Click on a node to see mouse details</h3>
+    </div>
+
     <!-- Embed tree data in a script tag to avoid JavaScript parsing issues -->
     <script id="tree-data" type="application/json">
         {{ tree_data|safe }}
@@ -12,58 +17,99 @@
     <!-- Include D3.js -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
-        // Parse the JSON directly from the script tag
+        // Parse the JSON data
         const treeData = JSON.parse(document.getElementById('tree-data').textContent);
     
-    // Set dimensions and margins for the tree layout
-    const width = 800;
-    const height = 500;
-    const margin = {top: 20, right: 120, bottom: 20, left: 120};
-
-    // Append SVG object to the div with id "tree"
-    const svg = d3.select("#tree")
-        .append("svg")
-        .attr("viewBox", `0 0 ${width + margin.right + margin.left} ${height + margin.top + margin.bottom}`) // Use viewBox for responsiveness
-        .attr("preserveAspectRatio", "xMinYMin meet") // Maintain aspect ratio
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    // Create the D3 tree layout
-    const treeLayout = d3.tree().size([height, width]);
-
-    // Convert the data to a hierarchy and calculate positions
-    const root = d3.hierarchy(treeData);
-    treeLayout(root);
-
-    // Links between nodes
-    svg.selectAll(".link")
-        .data(root.links())
-        .enter().append("path")
-        .attr("class", "link")
-        .attr("d", d3.linkHorizontal()
-            .x(d => d.y)
-            .y(d => d.x))
-        .style("fill", "none")
-        .style("stroke", "#ccc")
-        .style("stroke-width", "2px");
-
-    // Nodes for each mouse
-    const node = svg.selectAll(".node")
-        .data(root.descendants())
-        .enter().append("g")
-        .attr("class", "node")
-        .attr("transform", d => `translate(${d.y},${d.x})`);
-
-    // Circles for each node
-    node.append("circle")
-        .attr("r", 5)
-        .style("fill", d => d.children ? "#555" : "#999");
-
-    // Labels for each node
-    node.append("text")
-        .attr("dy", ".35em")
-        .attr("x", d => d.children ? -15 : 15)
-        .style("text-anchor", d => d.children ? "end" : "start")
-        .text(d => d.data.name);
-</script>
+        // Set dimensions and margins for the tree layout
+        const width = 800;
+        const height = 500;
+        const margin = { top: 20, right: 120, bottom: 20, left: 120 };
+    
+        // Create an SVG canvas with a group element for zooming
+        const svg = d3.select("#tree")
+            .append("svg")
+            .attr("width", width + margin.right + margin.left)
+            .attr("height", height + margin.top + margin.bottom)
+            .call(d3.zoom()
+                .scaleExtent([0.5, 3]) // Zoom limits (min scale 0.5, max scale 3)
+                .on("zoom", (event) => {
+                    g.attr("transform", event.transform); // Apply zoom transform to the group
+                })
+            )
+            .append("g") // Main group for tree visualization
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+    
+        const g = svg.append("g"); // Group for nodes and links
+    
+        // Create the D3 tree layout
+        const treeLayout = d3.tree().size([height, width]);
+    
+        // Modify the tree data to ensure proper hierarchy
+        function addParentsAndChildren(node) {
+            // If parents are present, convert them into children for the current node
+            if (node.parents && node.parents.length) {
+                node.children = node.parents;  // Make parents children of this node
+                node.children.forEach(addParentsAndChildren);  // Recursively process children
+                delete node.parents;  // Remove the parents property
+            }
+    
+            // If children are present, recursively process them
+            if (node.children && node.children.length) {
+                node.children.forEach(addParentsAndChildren);
+            }
+        }
+    
+        // Apply the function to process the tree data
+        addParentsAndChildren(treeData);
+    
+        // Convert data into a hierarchy and calculate positions
+        const root = d3.hierarchy(treeData);
+        treeLayout(root);
+    
+        // Links between nodes
+        g.selectAll(".link")
+            .data(root.links())
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", d3.linkHorizontal()
+                .x(d => d.y)
+                .y(d => d.x))
+            .style("fill", "none")
+            .style("stroke", "#ccc")
+            .style("stroke-width", "2px");
+    
+        // Nodes for each mouse
+        const node = g.selectAll(".node")
+            .data(root.descendants())
+            .enter().append("g")
+            .attr("class", "node")
+            .attr("transform", d => `translate(${d.y},${d.x})`)
+            .on("click", (event, d) => showMouseDetails(d.data)); // Attach click event
+    
+        // Circles for each node
+        node.append("circle")
+            .attr("r", 6)
+            .style("fill", d => d.children ? "#555" : "#999")
+            .style("cursor", "pointer");
+    
+        // Labels for each node
+        node.append("text")
+            .attr("dy", ".35em")
+            .attr("x", d => d.children ? -15 : 15)
+            .style("text-anchor", d => d.children ? "end" : "start")
+            .text(d => d.data.name)
+            .style("cursor", "pointer");
+    
+        // Function to display mouse details
+        function showMouseDetails(mouseData) {
+            document.getElementById("mouse-info").innerHTML = `
+                <h3>Mouse Details</h3>
+                <p><strong>Strain:</strong> ${mouseData.strain}</p>
+                <p><strong>Tube ID:</strong> ${mouseData.tube_id}</p>
+                <p><strong>Parents:</strong> ${mouseData.parents ? mouseData.parents.join(", ") : "Unknown"}</p>
+                <p><strong>Offspring:</strong> ${mouseData.children ? mouseData.children.map(child => child.name).join(", ") : "None"}</p>
+            `;
+        }
+    </script>
+    
 {% endblock %}
