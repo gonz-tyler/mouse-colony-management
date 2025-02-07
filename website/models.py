@@ -110,7 +110,7 @@ class Mouse(models.Model):
     cull_date = models.DateTimeField(null=True, blank=True)
     weaned = models.BooleanField(default=False)
     weaned_date = models.DateField(null=True, blank=True)
-    phenotype = models.CharField(max_length=255, blank=True, null=True)
+    genotype = models.CharField(max_length=255, blank=True, null=True)
     # change mouse to mousekeeper table
     #mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
 
@@ -428,12 +428,12 @@ class Strain(models.Model):
         return self.name
     
 
-# ---------- Phenotype Model ----------
-class Phenotype(models.Model):
-    mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='phenotypes')
+# ---------- genotype Model ----------
+class genotype(models.Model):
+    mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='genotypes')
     characteristic = models.CharField(max_length=100)  # The observable trait, e.g., "Coat Color"
-    description = models.CharField(max_length=255)  # A description of the phenotype
-    observation_date = models.DateField(auto_now_add=True)  # Date the phenotype was observed
+    description = models.CharField(max_length=255)  # A description of the genotype
+    observation_date = models.DateField(auto_now_add=True)  # Date the genotype was observed
 
     def __str__(self):
         return f"{self.mouse.mouse_id} - {self.characteristic}: {self.description}"
