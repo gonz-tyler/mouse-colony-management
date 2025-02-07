@@ -36,7 +36,7 @@ class AddMouseForm(forms.ModelForm):
         model = Mouse
         fields = [
             'strain', 'tube_id', 'dob', 'sex', 'father', 'mother', 
-            'earmark', 'clipped_date', 'state', 'cull_date', 'weaned', 'weaned_date' , 'team' , 'phenotype' , 'genotype'
+            'earmark', 'clipped_date', 'state', 'cull_date', 'weaned', 'weaned_date' , 'team' , 'phenotype' 
         ]
         widgets = {
             'tube_id': forms.NumberInput(attrs={'class': 'form-control'}),

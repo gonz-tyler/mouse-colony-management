@@ -28,7 +28,6 @@
             <th scope="col">Weaned</th>
             <th scope="col">Weaned Date</th>
             <th scope="col">Phenotype</th>
-            <th scope="col">Genotype</th>
         </tr>
     </thead>
     <tbody>
@@ -66,7 +65,6 @@
                     <td>{{ mouse.weaned|yesno:"Yes,No" }}</td>
                     <td>{{ mouse.weaned_date }}</td>
                     <td>{{ mouse.phenotype }}</td>
-                    <td>{{ mouse.genotype }}</td>
                 </tr>
             {% endfor %}
         {% else %}
