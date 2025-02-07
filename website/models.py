@@ -96,6 +96,7 @@ class Mouse(models.Model):
         ('TLTRBLBR', 'Top Left Top Right Bottom Left Bottom Right'),
     ]
     STATE_CHOICES = [('alive', 'Alive'), ('breeding', 'Breeding'), ('to_be_culled', 'To Be Culled'), ('deceased', 'Deceased')]
+    GENOTYPE_CHOICES = [('', ''), ('', ''), ('', '')]
 
     mouse_id = models.AutoField(primary_key=True)
     strain = models.ForeignKey('Strain', on_delete=models.CASCADE)
@@ -110,7 +111,7 @@ class Mouse(models.Model):
     cull_date = models.DateTimeField(null=True, blank=True)
     weaned = models.BooleanField(default=False)
     weaned_date = models.DateField(null=True, blank=True)
-    genotype = models.CharField(max_length=255, blank=True, null=True)
+    genotype = models.CharField(max_length=20, choices=GENOTYPE_CHOICES, default='', blank=False)
     # change mouse to mousekeeper table
     #mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
 
