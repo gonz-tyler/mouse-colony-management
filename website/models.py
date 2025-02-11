@@ -96,7 +96,7 @@ class Mouse(models.Model):
         ('TLTRBLBR', 'Top Left Top Right Bottom Left Bottom Right'),
     ]
     STATE_CHOICES = [('alive', 'Alive'), ('breeding', 'Breeding'), ('to_be_culled', 'To Be Culled'), ('deceased', 'Deceased')]
-    GENOTYPE_CHOICES = [('', ''), ('', ''), ('', '')]
+    GENOTYPE_CHOICES = [('Wild type', 'wt'), ('Heterozygous', 'hat'), ('Knock out', 'ko')]
 
     mouse_id = models.AutoField(primary_key=True)
     strain = models.ForeignKey('Strain', on_delete=models.CASCADE)
