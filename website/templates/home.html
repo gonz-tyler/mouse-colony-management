@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+  
 <h1>Welcome, {{ user.username }}!</h1>
 <p>You are logged in.</p>
 <div class="header-container">
@@ -33,44 +34,55 @@
     <tbody>
         {% if mice %}
             {% for mouse in mice %}
-                <tr>
-                    <td><a href="{% url 'view_mouse' mouse.mouse_id %}">{{ mouse.mouse_id }}</a></td>
-                    <td>{{ mouse.strain.name }}</td> <!-- Adjust to strain model's relevant field -->
-                    <td>{{ mouse.tube_id }}</td>
-                    <td>{{ mouse.dob }}</td>
-                    <td>{{ mouse.get_sex_display }}</td> <!-- Display choice label for 'sex' field -->
                     
-                    <td>
-                        {% if mouse.father %}
-                            <!-- <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a> -->
-                            <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a>
-                        {% else %}
-                            N/A
+                    <tr>    
+                    <!-- {% if mouse.state == 'deceased' %}<td style = "background-color: red;">{% elif mouse.state == 'to_be_culled' %}<td style = "background-color: orange;"></td>{% else %}<td style = "background-color: rgb(239, 238, 238);">{% endif %} -->
+                        
+                        <td><a href="{% url 'view_mouse' mouse.mouse_id %}">{{ mouse.mouse_id }}</a></td>
+                        <td>{{ mouse.strain.name }}</td> <!-- Adjust to strain model's relevant field -->
+                        <td>{{ mouse.tube_id }}</td>
+                        <td>{{ mouse.dob }}</td>
+                        <td>{{ mouse.get_sex_display }}</td> <!-- Display choice label for 'sex' field -->
+                        
+                        <td>
+                            {% if mouse.father %}
+                                <!-- <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a> -->
+                                <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        
+                        <td>
+                            {% if mouse.mother %}
+                                <!-- <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a> -->
+                                <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a>
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        
+                        <td>{{ mouse.get_earmark_display }}</td> <!-- Display choice label for 'earmark' field -->
+                        <td>{{ mouse.clipped_date }}</td>
+                        {% if mouse.state == 'alive' %}
+                            <td>{{ mouse.get_state_display }}</td> <!-- Display choice label for 'state' field -->
                         {% endif %}
-                    </td>
-                    
-                    <td>
-                        {% if mouse.mother %}
-                            <!-- <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a> -->
-                            <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a>
-                        {% else %}
-                            N/A
+                        {% if mouse.state == 'deceased' %}
+                            <td style = "background-color: red;">{{ mouse.get_state_display }}</td> <!-- Display choice label for 'state' field with the background colour being red so the culling is obvious -->
                         {% endif %}
-                    </td>
-                    
-                    <td>{{ mouse.get_earmark_display }}</td> <!-- Display choice label for 'earmark' field -->
-                    <td>{{ mouse.clipped_date }}</td>
-                    <td>{{ mouse.get_state_display }}</td> <!-- Display choice label for 'state' field -->
-                    <td>{{ mouse.cull_date }}</td>
-                    <td>{{ mouse.weaned|yesno:"Yes,No" }}</td>
-                    <td>{{ mouse.weaned_date }}</td>
-                    <td>{{ mouse.genotype }}</td>
-                </tr>
+                        {% if mouse.state == 'to_be_culled' %}
+                            <td style = "background-color: orange;">{{ mouse.get_state_display }}</td> <!-- Display choice label for 'state' field with the background colour being orange so the culing request is emphasised -->
+                        {% endif %}
+                        <td>{{ mouse.cull_date }}</td>
+                        <td>{{ mouse.weaned|yesno:"Yes,No" }}</td>
+                        <td>{{ mouse.weaned_date }}</td>
+                        <td>{{ mouse.genotype }}</td>
+                    </tr>
             {% endfor %}
         {% else %}
-            <tr>
-                <td colspan="30">No mice found.</td>
-            </tr>
+                <tr>
+                    <td colspan="30">No mice found.</td>
+                </tr>
         {% endif %}
     </tbody>
 </table>
