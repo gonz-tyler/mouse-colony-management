@@ -7,7 +7,12 @@
 <div class="header-container">
     <h1>Mice</h1>
     {% if user.role == 'leader' %}
-    <a href="{% url 'add_mouse' %}" class="btn btn-primary add-record-btn">
+    <a href="{% url 'manage_users' %}" class="btn btn-primary add-record-btn" style="max-width: max-content;">
+        Admin Management
+    </a>
+    {% endif %}
+    {% if user.role == 'leader' %}
+    <a href="{% url 'add_mouse' %}" class="btn btn-primary add-record-btn mb-3 mt-3">
         <i class="fas fa-plus"></i> Add Mouse
     </a>
     {% endif %}
@@ -139,6 +144,7 @@
             <tr>
                 <td colspan="30">No mice found.</td> <!-- Display text if there are no mice in database -->
             </tr>
+
         {% endif %}
     </tbody>
     
@@ -148,5 +154,6 @@
     Admin Management
 </a>
 {% endif %}
+
 
 {% endblock %}

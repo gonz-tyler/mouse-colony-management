@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center">Edit Profile</h1>
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data"> <!-- Add enctype here -->
+                {% csrf_token %}
+
+                <!-- Profile Picture Field -->
+                <div class="mb-3 text-center">
+                    <!-- Profile Picture Container -->
+                    <div class="profile-picture-container">
+                        <!-- Display existing profile picture or placeholder -->
+                        {% if user.profile_picture %}
+                        <!-- Display profile picture in the bubble -->
+                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture"
+                            class="img-thumbnail rounded-circle" style="width: 80px; height: 80px; object-fit: cover;"
+                            id="profile-image-preview">
+                        {% else %}
+                        <!-- Display the first letter of the username in a colored bubble -->
+                        <div class="profile-icon rounded-circle"
+                            style="width: 80px; height: 80px; background-color: #007bff; color: white; display: flex; justify-content: center; align-items: center;">
+                            {{ user.username|slice:":1"|upper }} <!-- Display the first letter of the username -->
+                        </div>
+                        {% endif %}
+
+                        <!-- Pencil Icon for editing -->
+                        <div class="edit-icon-container">
+                            <!-- File input that will trigger when you click anywhere in the container -->
+                            <input type="file" id="profile-picture-input" name="profile_picture"
+                                class="form-control d-none" accept="image/*" onchange="previewImage(event)">
+                            <!-- Pencil icon inside the container, for visual cue -->
+                            <label for="profile-picture-input" class="edit-icon"><i class="fa fa-pencil"></i></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Username Field -->
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">Username</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                    <div class="text-danger small">
+                        {{ form.username.errors|striptags }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- First Name Field -->
+                <div class="mb-3">
+                    <label for="id_first_name" class="form-label">First Name</label>
+                    {{ form.first_name }}
+                    {% if form.first_name.errors %}
+                    <div class="text-danger small">
+                        {{ form.first_name.errors|striptags }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Last Name Field -->
+                <div class="mb-3">
+                    <label for="id_last_name" class="form-label">Last Name</label>
+                    {{ form.last_name }}
+                    {% if form.last_name.errors %}
+                    <div class="text-danger small">
+                        {{ form.last_name.errors|striptags }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Role Field -->
+                <!-- <div class="mb-3">
+                    <label for="id_role" class="form-label">Role</label>
+                    {{ form.role }}
+                    {% if form.role.errors %}
+                        <div class="text-danger small">
+                            {{ form.role.errors|striptags }}
+                        </div>
+                    {% endif %}
+                </div> -->
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{% url 'user_profile' user.username %}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Function to preview the image when the user selects a file
+    function previewImage(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            const preview = document.getElementById('profile-image-preview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';  // Show the preview image
+        }
+
+        // If no file selected, hide the preview
+        if (file) {
+            reader.readAsDataURL(file);
+        } else {
+            document.getElementById('profile-image-preview').style.display = 'none';
+        }
+    }
+</script>
+<!-- Add Font Awesome for the Pencil Icon -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+{% endblock %}

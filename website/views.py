@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
@@ -8,12 +9,14 @@ from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 from django.db.models import Q
 from django.utils import timezone
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .decorators import role_required
 from .models import *
 from .forms import *
 import json
 
 from django.views.generic.edit import UpdateView
+from django.contrib.auth.forms import PasswordResetForm
 
 # --- Messages ---
 record_added = "Record has been added successfully."
@@ -26,12 +29,50 @@ def terms_of_service(request):
 def privacy_policy(request):
     return render(request, 'legal/privacy-policy.html')
 
+def password_reset(request):
+    if request.method == "POST":
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            form.save(request=request)  # Sends the email with reset link
+            return redirect('password_reset_done')  # Redirect to done page
+    else:
+        form = PasswordResetForm()
+    
+    return render(request, 'registration/password_reset_form.html', {'form': form})
+def password_reset_done(request):
+    return render(request, 'registration/password_reset_done.html')
+def password_reset_confirm(request):
+    return render(request, 'registration/password_reset_confirm.html')
+def password_reset_complete(request):
+    return render(request, 'registration/password_reset_complete.html')
+
+
 
 @login_required
 def home_view(request):
+    # Debugging: Log the page number
+    page_number = request.GET.get('page', 1)
+    logging.debug(f"Requested page number: {page_number}")
     # Fetch only the Mouse records that belong to the logged-in user
-    mice = Mouse.mice_managed_by_user(request.user)
-    return render(request, 'home.html', {'mice': mice})
+    mice = Mouse.mice_managed_by_user(request.user).order_by("tube_id")
+    paginator = Paginator(mice, 10)  # Show 10 users per page
+    # Get the page number from the request (default to 1)
+    page_number = request.GET.get('page')
+    
+    # Ensure the page number is valid, otherwise default to 1
+    try:
+        page_number = int(page_number) if page_number is not None else 1
+        if page_number < 1:
+            page_number = 1
+    except (ValueError, TypeError):  # Catch invalid page number (e.g., 'abc' or None)
+        page_number = 1  # Default to the first page if invalid
+
+    # Paginate the query
+    try:
+        page_obj = paginator.get_page(page_number)
+    except EmptyPage:
+        page_obj = paginator.get_page(paginator.num_pages)  # Fallback to the last page if page number is too high
+    return render(request, 'home.html', {'page_obj': page_obj})
 
 @login_required
 def logout_user(request):
@@ -41,7 +82,7 @@ def logout_user(request):
 
 def register(request):
     if request.method == 'POST':
-        form = RegistrationForm(request.POST)
+        form = RegistrationForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
             login(request, user)  # Log the user in after registration
@@ -55,6 +96,40 @@ def register(request):
 def user_profile(request, username):
     user = User.objects.get(username=username)
     return render(request, 'registration/profile.html', {"user": user})
+
+# DELETE ACCOUNT
+@login_required
+def delete_account(request):
+    if request.method == 'POST':
+        user = request.user
+
+        # Prevent deletion of superuser accounts
+        if user.is_superuser:
+            messages.error(request, "Admin accounts cannot be deleted.")
+            return render(request, 'registration/profile.html', {"user": user})
+
+        logout(request)  # Log the user out
+        user.delete()  # Delete the user account
+        messages.success(request, "Your account has been deleted successfully.")
+        return redirect('index')
+    return render(request, 'registration/profile.html', {"user": user})
+
+@login_required
+def edit_profile(request):
+    user = request.user
+    if request.method == 'POST':
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your profile has been updated successfully!")
+            return redirect('user_profile', username=request.user.username)
+    else:
+        form = ProfileUpdateForm(instance=user)
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'registration/edit_profile.html', context)
 
 # Generate genetic tree
 def genetic_tree(request, mouse_id):
@@ -77,6 +152,47 @@ def genetic_tree(request, mouse_id):
     }
 
     return render(request, 'genetictree.html', {'tree_data': json.dumps(tree_data), 'mouse': mouse})
+
+@login_required
+def manage_users(request):
+    """Allow lead users to manage other users' roles."""
+    if not request.user.role == 'leader':  # Ensure only leads can access
+        messages.error(request, "You do not have permission to access this page.")
+        return redirect('index')
+
+    # Fetch all users excluding breeding users and other lead users
+    users = User.objects.exclude(role='breeder').exclude(role='leader')
+
+    return render(request, 'management/manage_users.html', {'users': users})
+
+
+@login_required
+def update_user_role(request, user_id):
+    """Update user roles (only allowed by lead users)."""
+    if request.method == "POST":
+        if not request.user.role == 'leader':  # Ensure only leads can change roles
+            messages.success(request, "You do not have permission to perform this action.")
+            return redirect('index')
+
+        user = get_object_or_404(User, id=user_id)
+
+        # Prevent changing roles of other leads
+        if user.role == 'leader':
+            messages.success(request, "You do not have permission to access this page.")
+            return redirect('manage_users')
+
+        new_role = request.POST.get('role')
+        if new_role in ['new_staff', 'staff']:  # Ensure only allowed roles
+            user.role = new_role
+            user.save()
+            messages.success(request, f"Role successfully updated to {new_role}.")
+            return redirect('manage_users')
+
+        messages.error(request, "Invalid role selected.")
+        return redirect('manage_users')
+
+    messages.error(request, "Invalid request.")
+    return redirect('manage_users')
 
 
 class MouseClass:
@@ -135,6 +251,24 @@ class MouseClass:
         delete_it.delete()
         messages.success(request, record_deleted)
         return redirect('index')
+    
+class StrainClass:
+    def create_strain(request):
+        """Handles creating a new strain via AJAX."""
+        if request.method == 'POST':
+            new_strain_name = request.POST.get('new_strain')
+            if new_strain_name:
+                # Create the new strain
+                strain = Strain.objects.create(name=new_strain_name)
+                return JsonResponse({
+                    'success': True,
+                    'strain_id': strain.id,
+                    'strain_name': strain.name
+                })
+            else:
+                return JsonResponse({'success': False}, status=400)
+
+        return JsonResponse({'success': False}, status=400)
 
 class TeamClass:
     @login_required
@@ -230,20 +364,29 @@ class CageClass:
         return render(request, 'cage/all_cages.html', context)
     
     @login_required
-    @role_required(allowed_roles=['leader'])
+    #@role_required(allowed_roles=['leader'])
     def add_mouse_to_cage(request, cage_id):
         """Add a mouse to a cage."""
         cage = get_object_or_404(Cage, cage_id=cage_id)
 
         if request.method == 'POST':
-            mouse_id = request.POST.get('mouse_id')  # Assuming mouse_id is sent in the POST data
-            mouse = get_object_or_404(Mouse, id=mouse_id)
+            # Get the mouse ID from the form submission
+            mouse_id = request.POST.get('mouse_id')
 
-            # Check if mouse is already in a cage (with no end_date in CageHistory)
-            current_cage_history = CageHistory.objects.filter(mouse_id=mouse, end_date__isnull=True).first()
+            if not mouse_id:
+                return JsonResponse({'success': False, 'message': 'Mouse ID is required.'}, status=400)
+
+            try:
+                # Retrieve the mouse object using the mouse ID
+                mouse = Mouse.objects.get(mouse_id=mouse_id)
+            except Mouse.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Mouse not found.'}, status=404)
+
+            # Check if the mouse is already in a cage
+            current_cage_history = CageHistory.objects.filter(mouse_id=mouse.mouse_id, end_date__isnull=True).first()
 
             if current_cage_history:
-                # Mouse is already in a cage - create a transfer request
+                # Create a transfer request if the mouse is already in a cage
                 TransferRequest.objects.create(
                     requester=request.user,
                     mouse=mouse,
@@ -252,20 +395,50 @@ class CageClass:
                     status='pending',
                     request_date=timezone.now(),
                 )
-                return redirect('cage_details', cage_id=cage.cage_id)
-            else:
-                # Mouse is not in a cage, add it directly
-                CageHistory.objects.create(cage_id=cage, mouse_id=mouse, start_date=timezone.now(), end_date=None)
-                return redirect('cage_details', cage_id=cage.cage_id)
+                return JsonResponse({'success': True, 'message': 'Transfer request created successfully!'})
 
-        # Fetch all mice that are not currently in any cage
-        available_mice = Mouse.objects.exclude(cagehistory__end_date__isnull=False)
+            # Mouse is not currently in a cage; add it to the new cage
+            CageHistory.objects.create(cage_id=cage, mouse_id=mouse, start_date=timezone.now(), end_date=None)
+            return JsonResponse({'success': True, 'message': 'Mouse added to cage successfully!'})
 
-        context = {
-            'cage': cage,
-            'available_mice': available_mice,
-        }
-        return render(request, 'cage/add_mouse_to_cage.html', context)
+        return JsonResponse({'success': False, 'message': 'Invalid request method.'}, status=400)
+    
+    #@login_required
+    #def fetch_available_mice(request):
+    #    if request.method == 'GET' and request.headers.get("x-requested-with") == "XMLHttpRequest":  # Check if it's an AJAX request
+    #        available_mice = Mouse.objects.exclude(cagehistory__end_date__isnull=False, cagehistory__cage_id=cage.cage_id)
+    #        mice_data = [{"mouse_id": mouse.mouse_id, "name": f"Mouse {mouse.mouse_id}"} for mouse in available_mice]
+    #        return JsonResponse({"success": True, "available_mice": mice_data})
+    #    return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
+    
+    @login_required
+    def fetch_available_mice(request):
+        if request.method == 'GET' and request.headers.get("x-requested-with") == "XMLHttpRequest":  # Check if it's an AJAX request
+            cage_id = request.GET.get('cage_id')  # Retrieve the cage ID from the query parameters
+            if not cage_id:
+                return JsonResponse({"success": False, "message": "Cage ID is required."}, status=400)
+
+            try:
+                # Ensure the cage exists
+                cage = Cage.objects.get(cage_id=cage_id)
+            except Cage.DoesNotExist:
+                return JsonResponse({"success": False, "message": "Cage not found."}, status=404)
+
+            # Exclude mice with an active cage history in any cage or already in the specified cage
+            """available_mice = Mouse.objects.filter(
+                ~Q(cagehistory__end_date__isnull=True) | Q(cagehistory__isnull=True)
+            )"""
+            available_mice = Mouse.objects.exclude(
+                cagehistory__cage_id=cage_id
+            ).exclude(
+                Q(transfer_requests__status="pending")
+            )
+
+            # Prepare the response data
+            mice_data = [{"mouse_id": mouse.mouse_id, "name": f"Mouse {mouse.mouse_id}"} for mouse in available_mice]
+            return JsonResponse({"success": True, "available_mice": mice_data})
+
+        return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
 
     @login_required
     @role_required(allowed_roles=['leader'])
@@ -291,9 +464,13 @@ class CageClass:
         # Get all current mice in this cage
         current_mice = cage.cagehistory_set.filter(end_date=None).select_related('mouse_id')
 
+        # Get the pending transfer requests for this cage (destination_cage = current cage)
+        pending_transfers = TransferRequest.objects.filter(destination_cage=cage, status='pending')
+
         context = {
             'cage': cage,
             'current_mice': current_mice,
+            'pending_transfers': pending_transfers,
         }
         return render(request, 'cage/cage_details.html', context)
     
@@ -375,16 +552,31 @@ class AllRequestsClass:
         # Filter requests based on user role
         if request.user.role == 'breeder':
             # If the user is a breeder, show all requests
-            transfers = TransferRequest.objects.all()
-            breedings = BreedingRequest.objects.all()
-            cullings = CullingRequest.objects.all()
+            transfers = TransferRequest.objects.all().exclude(status="completed").exclude(status="rejected")
+            breedings = BreedingRequest.objects.all().exclude(status="completed").exclude(status="rejected")
+            cullings = CullingRequest.objects.all().exclude(status="completed").exclude(status="rejected")
+            completed_transfers = TransferRequest.objects.all().exclude(status="pending").exclude(status="approved")
+            completed_breedings = BreedingRequest.objects.all().exclude(status="pending").exclude(status="approved")
+            completed_cullings = CullingRequest.objects.all().exclude(status="pending").exclude(status="approved")
         else:
             # If the user is not a breeder, show only their requests
-            transfers = TransferRequest.objects.filter(requester=request.user)
-            breedings = BreedingRequest.objects.filter(requester=request.user)
-            cullings = CullingRequest.objects.filter(requester=request.user)
+            transfers = TransferRequest.objects.filter(requester=request.user).exclude(status="completed").exclude(status="rejected")
+            breedings = BreedingRequest.objects.filter(requester=request.user).exclude(status="completed").exclude(status="rejected")
+            cullings = CullingRequest.objects.filter(requester=request.user).exclude(status="completed").exclude(status="rejected")
+            completed_transfers = TransferRequest.objects.filter(requester=request.user).exclude(status="pending").exclude(status="approved")
+            completed_breedings = BreedingRequest.objects.filter(requester=request.user).exclude(status="pending").exclude(status="approved")
+            completed_cullings = CullingRequest.objects.filter(requester=request.user).exclude(status="pending").exclude(status="approved")
+        
+        context = {
+            "current_transfers": transfers,
+            "current_breedings": breedings,
+            "current_cullings": cullings,
+            "completed_transfers": completed_transfers,
+            "completed_breedings": completed_breedings,
+            "completed_cullings": completed_cullings,
+        }
 
-        return render(request, 'requests/all_requests.html', {'transfers': transfers, "breedings": breedings, "cullings":cullings})
+        return render(request, 'requests/all_requests.html', context)
 
 
 class TransferRequestClass:

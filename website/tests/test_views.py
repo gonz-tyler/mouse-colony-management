@@ -19,7 +19,7 @@ class LegalPagesViewTest(TestCase):
 class HomeViewTest(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='password')
+        self.user = User.objects.create_user(username='testuser', email='testemail@abdn.ac.uk', password='password')
 
     def test_home_view_redirects_if_not_logged_in(self):
         response = self.client.get(reverse('index'))
@@ -35,7 +35,7 @@ class HomeViewTest(TestCase):
 class LogoutUserViewTest(TestCase):
 
     def setUp(self):
-        self.user = User.objects.create_user(username='testuser', password='password')
+        self.user = User.objects.create_user(username='testuser', email='testemail@abdn.ac.uk', password='password')
 
     def test_logout_user_view(self):
         self.client.login(username='testuser', password='password')

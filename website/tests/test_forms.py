@@ -76,5 +76,29 @@ class TestRegistrationForm(TestCase):
         self.assertIn('email', form.errors)  # There should be an error for the email field
         self.assertEqual(form.errors['email'], ['Email must be an @abdn.ac.uk address.'])
 
+    def test_email_unique_error(self):
+        """Test that trying to create a second user with the same email raises a unique email error."""
+        # First user creation
+        form_data = {
+            'username': 'testuser',
+            'first_name': 'John',
+            'last_name': 'Doe',
+            'email': 'testuser@abdn.ac.uk',  # The email you want to test
+            'password1': 'strongpassword123',
+            'password2': 'strongpassword123',
+            'role': 'leader',
+            'terms_of_service': True,
+            'privacy_policy': True,
+        }
+        form = RegistrationForm(data=form_data)
+        self.assertTrue(form.is_valid())  # The first form should be valid
+        form.save()  # Save the first user
 
-    
+        # Attempt to create the second user with the same email
+        duplicate_form_data = form_data.copy()
+        duplicate_form_data['username'] = 'duplicateuser'  # Different username for the second user
+        
+        duplicate_form = RegistrationForm(data=duplicate_form_data)
+        self.assertFalse(duplicate_form.is_valid())  # The second form should be invalid
+        self.assertIn('email', duplicate_form.errors)  # There should be an error for the email field
+        self.assertEqual(duplicate_form.errors['email'], ['This email address is already in use.'])  # Check the exact error message

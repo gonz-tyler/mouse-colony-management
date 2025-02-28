@@ -1,13 +1,212 @@
 {% extends 'base.html' %}
 {% block content %}
-
-<div class="container col-md-6 offset-md-3">
-    <h1>Update Mouse</h1>
-    <form method="post" class="mt-3 pb-5">
+<div class="container col-md-8 offset-md-2">
+    <h1 class="text-center mt-4">Add New Mouse</h1>
+    <form method="post" class="mt-4 pb-5">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary me-2">Update Mouse</button>
-        <a href="{% url 'index' %}" class="btn btn-secondary">Back</a>
+
+        <!-- Strain -->
+        <div class="mb-3">
+            <label for="id_strain" class="form-label">{{ form.strain.label }}</label>
+            <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                    {{ form.strain }}
+                </div>
+                <button type="button" class="btn btn-outline-success ms-2" id="add-strain-btn" data-bs-toggle="modal" data-bs-target="#strainModal">
+                    <i class="fas fa-plus"></i> Add New Strain
+                </button>
+            </div>
+            {% if form.strain.errors %}
+                <div class="text-danger">{{ form.strain.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Tube ID -->
+        <div class="mb-3">
+            <label for="id_tube_id" class="form-label">{{ form.tube_id.label }}</label>
+            {{ form.tube_id }}
+            {% if form.tube_id.errors %}
+                <div class="text-danger">{{ form.tube_id.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Date of Birth -->
+        <div class="mb-3">
+            <label for="id_dob" class="form-label">{{ form.dob.label }}</label>
+            {{ form.dob }}
+            {% if form.dob.errors %}
+                <div class="text-danger">{{ form.dob.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Sex (Radio Buttons) -->
+        <div class="mb-3">
+            <label class="form-label">{{ form.sex.label }}</label>
+            <div class="form-check">
+                {% for choice in form.sex %}
+                    <div class="form-check">
+                        {{ choice.tag }}
+                        <label class="form-check-label">{{ choice.choice_label }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+            {% if form.sex.errors %}
+                <div class="text-danger">{{ form.sex.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Father -->
+        <div class="mb-3">
+            <label for="id_father" class="form-label">{{ form.father.label }}</label>
+            {{ form.father }}
+            {% if form.father.errors %}
+                <div class="text-danger">{{ form.father.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Mother -->
+        <div class="mb-3">
+            <label for="id_mother" class="form-label">{{ form.mother.label }}</label>
+            {{ form.mother }}
+            {% if form.mother.errors %}
+                <div class="text-danger">{{ form.mother.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Earmark -->
+        {% for val, label in form.earmark.field.choices %}
+            <div class="form-check">
+                <input type="checkbox" name="earmark" value="{{ val }}" 
+                    class="form-check-input" id="id_earmark_{{ forloop.counter0 }}"
+                    {% if val in form.earmark.value %}checked{% endif %}>
+                <label class="form-check-label" for="id_earmark_{{ forloop.counter0 }}">
+                    {{ label }}
+                </label>
+            </div>
+        {% endfor %}
+
+        <!-- Clipped Date -->
+        <div class="mb-3">
+            <label for="id_clipped_date" class="form-label">{{ form.clipped_date.label }}</label>
+            {{ form.clipped_date }}
+            {% if form.clipped_date.errors %}
+                <div class="text-danger">{{ form.clipped_date.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- State -->
+        <div class="mb-3">
+            <label for="id_state" class="form-label">{{ form.state.label }}</label>
+            {{ form.state }}
+            {% if form.state.errors %}
+                <div class="text-danger">{{ form.state.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Cull Date -->
+        <div class="mb-3">
+            <label for="id_cull_date" class="form-label">{{ form.cull_date.label }}</label>
+            {{ form.cull_date }}
+            {% if form.cull_date.errors %}
+                <div class="text-danger">{{ form.cull_date.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Weaned -->
+        <div class="mb-3">
+            <label for="id_weaned" class="form-label">{{ form.weaned.label }}</label>
+            {{ form.weaned }}
+            {% if form.weaned.errors %}
+                <div class="text-danger">{{ form.weaned.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Weaned Date -->
+        <div class="mb-3">
+            <label for="id_weaned_date" class="form-label">{{ form.weaned_date.label }}</label>
+            {{ form.weaned_date }}
+            {% if form.weaned_date.errors %}
+                <div class="text-danger">{{ form.weaned_date.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Team -->
+        <div class="mb-3">
+            <label for="id_team" class="form-label">{{ form.team.label }}</label>
+            {{ form.team }}
+            {% if form.team.errors %}
+                <div class="text-danger">{{ form.team.errors }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Submit Button -->
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary me-2">Update Mouse</button>
+            <a href="{% url 'index' %}" class="btn btn-secondary">Back to Mouse List</a>
+        </div>
     </form>
 </div>
-{%endblock%}
+
+<!-- Modal for adding a new strain -->
+<div class="modal fade" id="strainModal" tabindex="-1" role="dialog" aria-labelledby="strainModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="strainModalLabel">Create New Strain</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Modal form to create a new strain -->
+                <form id="new-strain-form">
+                    <div class="form-group">
+                        <label for="new_strain">New Strain</label>
+                        <input type="text" name="new_strain" class="form-control" id="new_strain" placeholder="Enter new strain">
+                    </div>
+                    <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">Create Strain</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap and jQuery (Make sure you include these in your base HTML if not already present) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Handle the submission of the new strain form
+    $('#new-strain-form').submit(function(e) {
+        e.preventDefault();
+        var strainName = $('#new_strain').val();
+
+        // Send an AJAX request to create the new strain
+        $.ajax({
+            url: '{% url "create_strain" %}',  // URL to handle strain creation
+            method: 'POST',
+            data: {
+                'new_strain': strainName,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Close the modal and add the new strain to the select dropdown
+                    $('#strainModal').modal('hide');
+                    var newStrain = $('<option>', {
+                        value: response.strain_id,
+                        text: response.strain_name
+                    });
+                    $('#id_strain').append(newStrain);
+                    $('#id_strain').val(response.strain_id);  // Optionally set it as selected
+                } else {
+                    alert('Failed to create strain');
+                }
+            },
+            error: function() {
+                alert('An error occurred while creating the strain');
+            }
+        });
+    });
+</script>
+{% endblock %}

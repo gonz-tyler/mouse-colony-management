@@ -5,6 +5,10 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 import datetime as dt
+import os
+from cloudinary.models import CloudinaryField
+import cloudinary
+import cloudinary.api
 
 
     
@@ -45,6 +49,10 @@ class User(AbstractUser):
     ]
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='new_staff')
 
+    email = models.EmailField(unique=True)  # Add unique constraint to email
+
+    profile_picture = CloudinaryField("image", blank=True, null=True)
+
     # Enforce email validation
     def clean(self):
         super().clean()
@@ -53,6 +61,17 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         self.full_clean()  # Calls the clean method before saving
+
+        # Check if a profile picture is already set and if it is a new picture
+        if self.pk:
+            # If there's an old profile picture, delete it
+            old_picture = User.objects.get(pk=self.pk).profile_picture
+            if old_picture and old_picture != self.profile_picture:
+                # Delete the old profile picture file if it exists on Cloudinary
+                if old_picture and old_picture.public_id:
+                    cloudinary.api.delete_resources([old_picture.public_id])
+
+        # Save the new profile picture
         super().save(*args, **kwargs)
 
 # ---------- Team Model ----------
@@ -102,10 +121,11 @@ class Mouse(models.Model):
     strain = models.ForeignKey('Strain', on_delete=models.CASCADE)
     tube_id = models.IntegerField()
     dob = models.DateField()
-    sex = models.CharField(max_length=1, choices=SEX_CHOICES)
+    sex = models.CharField(max_length=1, choices=SEX_CHOICES, default='M', blank=False, null=False)
     father = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='father_of', limit_choices_to={'sex': 'M'})
     mother = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='mother_of', limit_choices_to={'sex': 'F'})
-    earmark = models.CharField(max_length=20, choices=CLIPPED_CHOICES, blank=True, null=True)
+    # earmark = models.CharField(max_length=20, choices=CLIPPED_CHOICES, blank=True, null=True)
+    earmark = models.JSONField(default=list, blank=True, null=True)
     clipped_date = models.DateField(null=True, blank=True)
     state = models.CharField(max_length=12, choices=STATE_CHOICES, default='alive', blank=False)
     cull_date = models.DateTimeField(null=True, blank=True)
@@ -115,6 +135,22 @@ class Mouse(models.Model):
     # change mouse to mousekeeper table
     #mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
 
+    def get_earmark_display(self):
+        """Return a readable string of earmark choices."""
+        # Map the list of choices to their corresponding labels in CLIPPED_CHOICES
+        choice_dict = dict(self.CLIPPED_CHOICES)
+        return ''.join(choice_dict.get(choice, choice) for choice in self.earmark)
+
+    def get_earmark_choices(self):
+        """Return the list of earmark choices directly."""
+        return self.earmark if self.earmark else []
+
+    def set_earmark_choices(self, choices):
+        """Set the list of earmark choices."""
+        if isinstance(choices, list):
+            self.earmark = choices
+        else:
+            raise ValueError("Choices must be a list of strings.")
 
     class Meta:
         unique_together = ('strain', 'tube_id')
@@ -387,6 +423,15 @@ class TransferRequest(models.Model):
     request_date = models.DateTimeField(auto_now_add=True)
     approval_date = models.DateTimeField(null=True, blank=True)
     comments = models.TextField(blank=True, null=True)
+
+    def clean(self):
+        # Ensure that destination_cage is set before checking
+        if self.destination_cage is None:
+            raise ValidationError({'destination_cage': 'Destination cage cannot be empty.'})
+        
+        # Custom validation to ensure source_cage and destination_cage are different
+        if self.source_cage == self.destination_cage:
+            raise ValidationError({'destination_cage': 'Destination cage cannot be the same as the source cage.'})
 
     def approve(self, approver):
         self.status = 'approved'

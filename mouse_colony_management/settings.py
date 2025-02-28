@@ -18,6 +18,8 @@ import dj_database_url # heroku database neccessary import
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+LOCAL_DEVELOPMENT = False
+
 # Initialize environment variables
 env = environ.Env() 
 env.read_env(os.path.join(BASE_DIR, '.env'))  # Load the .env file
@@ -27,7 +29,7 @@ env.read_env(os.path.join(BASE_DIR, '.env'))  # Load the .env file
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rb-i&@y^6%6w=)d!ylgu31z6a^u*qkxwzw-9fa&_()z#xo&gb-'
+# SECRET_KEY = 'django-insecure-rb-i&@y^6%6w=)d!ylgu31z6a^u*qkxwzw-9fa&_()z#xo&gb-' #--- OLD KEY CHANGED FOR SECURITY ---#
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -46,6 +48,8 @@ INSTALLED_APPS = [
     'mouse_colony_management',
     'website',
     'whitenoise.runserver_nostatic',
+    'cloudinary',
+    'cloudinary_storage',
 ]
 
 MIDDLEWARE = [
@@ -78,6 +82,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'website.context_processors.add_current_year'
             ],
         },
     },
@@ -97,22 +102,21 @@ WSGI_APPLICATION = 'mouse_colony_management.wsgi.application'
 #     }
 # }
 
-# Update the database configuration for Heroku (PostgreSQL)
-# if 'DATABASE_URL' in os.environ:
-#     DATABASES['default'] = dj_database_url.config(conn_max_age=600, ssl_require=True)
+# Heroku Database Configuration
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=os.environ.get('DATABASE_URL')
+#     )
+# }
 
-# Comment this out during local development
-# Remember to uncomment before pushing to GitHub 'main' branch
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': os.environ.get('DB_PORT'),
+# GitHub Actions
+if 'DATABASE_URL' in os.environ:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL')
+        )
     }
-}
+
 
 # Uncomment during local development
 # .env must be present
@@ -166,7 +170,42 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',  # Replace with the actual folder containing your static files
+]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+
+# Password Reset Email Backend Details
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = env('EMAIL_USER')  # Your Gmail address
+# EMAIL_HOST_PASSWORD = env('EMAIL_USER_PASSWORD')  # Your Gmail password (or app password if 2FA is enabled)
+# HEROKU EMAIL CONFIG
+# EMAIL_HOST_USER = os.environ.get('EMAIL_USER')  # Your Gmail address
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_USER_PASSWORD')  # Your Gmail password (or app password if 2FA is enabled)
+
+DEFAULT_FROM_EMAIL = 'password_reset@gmail.com'
+
+
+# Cloudinary configuration Local Deployment
+# CLOUDINARY_STORAGE = {
+#     'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME'),
+#     'API_KEY': env('CLOUDINARY_API_KEY'),
+#     'API_SECRET': env('CLOUDINARY_API_SECRET'),
+# }
+
+# Cloudinary configuration Heroku Deployment
+# CLOUDINARY_STORAGE = {
+#     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+#     'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+#     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+# }
+
+# Set Cloudinary as the default storage for media files
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Media files
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -176,3 +215,38 @@ MEDIA_URL = '/media/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Checks if the project is running in a local development environment
+if LOCAL_DEVELOPMENT:
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': env('CLOUDINARY_CLOUD_NAME'),
+        'API_KEY': env('CLOUDINARY_API_KEY'),
+        'API_SECRET': env('CLOUDINARY_API_SECRET'),
+    }
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': env('DB_NAME'),
+            'USER': env('DB_USER'),
+            'PASSWORD': env('DB_PASSWORD'),
+            'HOST': env('DB_HOST'),
+            'PORT': env('DB_PORT'),
+        }
+    }
+    EMAIL_HOST_USER = env('EMAIL_USER')  # Your Gmail address
+    EMAIL_HOST_PASSWORD = env('EMAIL_USER_PASSWORD')  # Your Gmail password (or app password if 2FA is enabled)
+    SECRET_KEY = env('SECRET_KEY')
+else:
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+        'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+        'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+    }
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL')
+        )
+    }
+    EMAIL_HOST_USER = os.environ.get('EMAIL_USER')  # Your Gmail address
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_USER_PASSWORD')  # Your Gmail password (or app password if 2FA is enabled)
+    SECRET_KEY = os.environ.get('SECRET_KEY')
