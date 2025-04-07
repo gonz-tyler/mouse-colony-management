@@ -35,9 +35,9 @@
         </tr>
     </thead>
     <tbody>
-        {% if page_obj %}
-        {% for mouse in page_obj %}
-        {% if mouse.state == 'deceased' %} <!-- If mouse status is set to dead -->
+        {% if mice %}
+        {% for mouse in mice %}
+            {% if mouse.state == 'deceased' %} <!-- If mouse status is set to dead -->
                     {% with background_color='rgb(255, 148, 148)' %} <!-- change cell background colour for emphasis -->
                     <tr> <!-- Accessing and displaying information related to specific mice -->
                         <td style="background-color: {{ background_color }}">
@@ -70,7 +70,7 @@
                         <!-- <td style="background-color: {{ background_color }}">{{ mouse.genotype }}</td> -->
                     </tr>
                     {% endwith %}
-                {% elif mouse.state == 'to_be_culled' %} <!-- If mouse state is set to needs to be culled -->
+            {% elif mouse.state == 'to_be_culled' %} <!-- If mouse state is set to needs to be culled -->
                     {% with background_color='orange' %} <!-- Change cell background colour for emphasis -->
                     <tr>
                         <td style="background-color: {{ background_color }}">
@@ -103,7 +103,7 @@
                        <!-- <td style="background-color: {{ background_color }}">{{ mouse.genotype }}</td> -->
                     </tr>
                     {% endwith %}
-                {% else %} <!-- Any toher state of mouse -->
+            {% else %} <!-- Any other state of mouse -->
                     {% with background_color='rgb(239, 238, 238)' %} <!-- Default background -->
                     <tr>
                         <td style="background-color: {{ background_color }}">
@@ -138,12 +138,12 @@
                     {% endwith %}
                 {% endif %}
             {% endfor %}
-        {% else %}
+            {% else %}
             <tr>
                 <td colspan="30">No mice found.</td> <!-- Display text if there are no mice in database -->
             </tr>
 
-        {% endif %}
+            {% endif %}
     </tbody>
 <!-- Pagination Component -->
 {% include "pagination.html" %}
