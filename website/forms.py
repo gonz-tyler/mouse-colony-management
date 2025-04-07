@@ -61,12 +61,13 @@ class AddMouseForm(forms.ModelForm):
     )
     strain = forms.ModelChoiceField(queryset=Strain.objects.all(), required=False, label='Select Strain')
     new_strain = forms.CharField(max_length=100, required=False, label='New Strain')
+    genotype = forms.ModelChoiceField(queryset=Mouse.GENOTYPE_CHOICES, required=False, label="Select genotype")
 
     class Meta:
         model = Mouse
         fields = [
             'strain', 'tube_id', 'dob', 'sex', 'father', 'mother', 
-            'earmark', 'clipped_date', 'state', 'cull_date', 'weaned', 'weaned_date' , 'team'
+            'earmark', 'clipped_date', 'state', 'cull_date', 'weaned', 'weaned_date' , 'team' , 'genotype'
         ]
         widgets = {
             'tube_id': forms.NumberInput(attrs={'class': 'form-control'}),

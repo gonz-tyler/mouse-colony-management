@@ -151,6 +151,15 @@
             {% endif %}
         </div>
 
+        <!-- Genotype -->
+        <div class="mb-3">
+            <label for="genotype" class="form-label">{{ form.genotype.label }}</label>
+            {{ form.genotype }}
+            {% if form.genotype.errors %}
+                <div class="text-danger">{{ form.genotype.errors }}</div>
+            {% endif %}
+        </div>
+
         <!-- Submit Button -->
         <div class="mt-4">
             <button type="submit" class="btn btn-primary me-2">Add Mouse</button>
