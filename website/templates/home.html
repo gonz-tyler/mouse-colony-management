@@ -37,7 +37,7 @@
     <tbody>
         {% if page_obj %}
         {% for mouse in page_obj %}
-            {% if mouse.state = 'to_be_culled' %}
+            {% if mouse.state == 'to_be_culled' %}
             
                 <tr>
                     <td style="background-color: orange"><a href="{% url 'view_mouse' mouse.mouse_id %}">{{ mouse.mouse_id }}</a></td>
