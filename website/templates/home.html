@@ -71,6 +71,7 @@
                     <td style="background-color: orange">{{ mouse.weaned|yesno:"Yes,No" }}</td>
                     <td style="background-color: orange">{{ mouse.weaned_date }}</td>
                 </tr>
+            {% endif %}
         {% endfor %}
         {% else %}
                 <tr>
