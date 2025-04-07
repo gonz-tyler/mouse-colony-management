@@ -139,14 +139,13 @@
                     {% endif %}
                 {% endfor %}
             {% else %}
-            <tr>
-                <td colspan="30">No mice found.</td> <!-- Display text if there are no mice in database -->
-            </tr>
-
+                <tr>
+                    <td colspan="30">No mice found.</td> <!-- Display text if there are no mice in database -->
+                </tr>
             {% endif %}
     </tbody>
-<!-- Pagination Component -->
-{% include "pagination.html" %}
+    <!-- Pagination Component -->
+    {% include "pagination.html" %}
 
 
 {% endblock %}
