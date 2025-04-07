@@ -35,8 +35,8 @@
         </tr>
     </thead>
     <tbody>
-        {% if mice %}
-            {% for mouse in mice %}
+        {% if page_obj %}
+            {% for mouse in page_obj %}
                 {% if mouse.state == 'deceased' %} <!-- If mouse status is set to dead -->
                         <!-- {% with background_color='rgb(255, 148, 148)' %} --> <!-- change cell background colour for emphasis -->
                         <tr> <!-- Accessing and displaying information related to specific mice -->
