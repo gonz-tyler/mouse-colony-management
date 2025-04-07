@@ -37,38 +37,40 @@
     <tbody>
         {% if page_obj %}
         {% for mouse in page_obj %}
-            <tr>
-                <td><a href="{% url 'view_mouse' mouse.mouse_id %}">{{ mouse.mouse_id }}</a></td>
-                <td>{{ mouse.strain.name }}</td> <!-- Adjust to strain model's relevant field -->
-                <td>{{ mouse.tube_id }}</td>
-                <td>{{ mouse.dob }}</td>
-                <td>{{ mouse.get_sex_display }}</td> <!-- Display choice label for 'sex' field -->
-
-                <td>
-                    {% if mouse.father %}
-                    <!-- <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a> -->
-                    <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a>
-                    {% else %}
-                    N/A
-                    {% endif %}
-                </td>
-
-                <td>
-                    {% if mouse.mother %}
-                    <!-- <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a> -->
-                    <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a>
-                    {% else %}
-                    N/A
-                    {% endif %}
-                </td>
-
-                <td>{{ mouse.get_earmark_display }}</td> <!-- Display choice label for 'earmark' field -->
-                <td>{{ mouse.clipped_date }}</td>
-                <td>{{ mouse.get_state_display }}</td> <!-- Display choice label for 'state' field -->
-                <td>{{ mouse.cull_date }}</td>
-                <td>{{ mouse.weaned|yesno:"Yes,No" }}</td>
-                <td>{{ mouse.weaned_date }}</td>
-            </tr>
+            {% if mouse.state = 'to_be_culled' %}
+            
+                <tr>
+                    <td style="background-color: orange"><a href="{% url 'view_mouse' mouse.mouse_id %}">{{ mouse.mouse_id }}</a></td>
+                    <td style="background-color: orange">{{ mouse.strain.name }}</td> <!-- Adjust to strain model's relevant field -->
+                    <td style="background-color: orange">{{ mouse.tube_id }}</td>
+                    <td style="background-color: orange">{{ mouse.dob }}</td>
+                    <td style="background-color: orange">{{ mouse.get_sex_display }}</td> <!-- Display choice label for 'sex' field -->
+        
+                    <td style="background-color: orange">
+                        {% if mouse.father %}
+                        <!-- <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a> -->
+                        <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a>
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </td>
+        
+                    <td style="background-color: orange">
+                        {% if mouse.mother %}
+                        <!-- <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a> -->
+                        <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a>
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </td>
+        
+                    <td style="background-color: orange">{{ mouse.get_earmark_display }}</td> <!-- Display choice label for 'earmark' field -->
+                    <td style="background-color: orange">{{ mouse.clipped_date }}</td>
+                    <td style="background-color: orange">{{ mouse.get_state_display }}</td> <!-- Display choice label for 'state' field -->
+                    <td style="background-color: orange">{{ mouse.cull_date }}</td>
+                    <td style="background-color: orange">{{ mouse.weaned|yesno:"Yes,No" }}</td>
+                    <td style="background-color: orange">{{ mouse.weaned_date }}</td>
+                </tr>
         {% endfor %}
         {% else %}
                 <tr>
