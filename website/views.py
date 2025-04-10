@@ -131,6 +131,29 @@ def edit_profile(request):
     }
     return render(request, 'registration/edit_profile.html', context)
 
+@login_required
+def notifications(request, username):
+    user = get_object_or_404(User, username=username)
+    notifications = Notification.objects.filter(recipient=user).order_by('created_at').reverse()
+    return render(request, 'registration/notifications.html', {'notifications': notifications})
+
+@login_required
+def mark_notification_as_read(request, username, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification.is_read = True
+    notification.save()
+    return redirect('notifications', username=username)
+
+@login_required
+def delete_notification(request, notification_id):
+    # Ensure the user has permission to delete the notification
+    if not Notification.objects.filter(id=notification_id, recipient=request.user).exists():
+        messages.error(request, "You do not have permission to delete this notification.")
+        return redirect('notifications', username=request.user.username)
+    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
+    notification.delete()
+    return redirect('notifications', username=request.user.username)
+
 # Generate genetic tree
 def genetic_tree(request, mouse_id):
     mouse = get_object_or_404(Mouse, mouse_id=mouse_id)
@@ -639,6 +662,14 @@ class TransferRequestClass:
             # Mark the transfer request as completed
             transfer_request.status = 'completed'
             transfer_request.save()
+        
+        # Create a notification object to notify the requester about the approval
+        Notification.objects.create(
+            recipient=transfer_request.requester,
+            message=f"Your transfer request for {transfer_request.mouse} has been approved.",
+            created_at=timezone.now(),
+            request_type = 'transfer',
+        )
 
         return redirect('all_requests')  # Redirect to a list of all requests
     
@@ -651,6 +682,14 @@ class TransferRequestClass:
         if transfer_request.status == 'pending':
             transfer_request.status = 'rejected'
             transfer_request.save()
+        
+        # Create a notification object to notify the requester about the rejected
+        Notification.objects.create(
+            recipient=transfer_request.requester,
+            message=f"Your transfer request for {transfer_request.mouse} has been rejected.",
+            created_at=timezone.now(),
+            request_type = 'transfer',
+        )
 
         return redirect('all_requests')
     
@@ -700,10 +739,10 @@ class BreedingRequestClass:
         # Check if the request is pending
         if breeding_request.status == 'pending':
             breeding_request.delete()
-            # Optionally, add a success message
+            # Add a success message
             messages.success(request, "Breeding request has been canceled.")
         else:
-            # If the request is not pending, you might want to show an error
+            # Show an error
             messages.error(request, "Only pending requests can be canceled.")
 
         return redirect('all_requests')
@@ -752,6 +791,22 @@ class BreedingRequestClass:
             breeding_request.status = 'completed'
             breeding_request.save()
 
+            # Create a Breed object matching the request data
+            Breed.objects.create(
+                male=breeding_request.male_mouse,
+                female=breeding_request.female_mouse,
+                cage=breeding_request.cage,
+                start_date=timezone.now(),
+            )
+
+        # Create a notification object to notify the requester about the approval
+        Notification.objects.create(
+            recipient=breeding_request.requester,
+            message=f"Your breeding request for {breeding_request.male_mouse} and {breeding_request.female_mouse} has been approved.",
+            created_at=timezone.now(),
+            request_type = 'breeding',
+        )
+
         return redirect('all_requests')  # Redirect to a list of all requests
 
     @login_required
@@ -763,6 +818,14 @@ class BreedingRequestClass:
         if breeding_request.status == 'pending':
             breeding_request.status = 'rejected'
             breeding_request.save()
+        
+        # Notify the requester about the rejection
+        Notification.objects.create(
+            recipient=breeding_request.requester,
+            message=f"Your breeding request for {breeding_request.male_mouse} and {breeding_request.female_mouse} has been rejected.",
+            created_at=timezone.now(),
+            request_type = 'breeding',
+        )
 
         return redirect('all_requests')
 
@@ -823,6 +886,14 @@ class CullingRequestClass:
             # Mark the culling request as completed
             culling_request.status = 'completed'
             culling_request.save()
+        
+        # Create a notification object to notify the requester about the approval
+        Notification.objects.create(
+            recipient=culling_request.requester,
+            message=f"Your culling request for {culling_request.mouse} has been approved.",
+            created_at=timezone.now(),
+            request_type = 'culling',
+        )
 
         return redirect('all_requests')  # Redirect to a list of all requests
 
@@ -837,4 +908,35 @@ class CullingRequestClass:
             culling_request.status = 'rejected'
             culling_request.save()
 
+        # Create a notification object to notify the requester about the approval
+        Notification.objects.create(
+            recipient=culling_request.requester,
+            message=f"Your culling request for {culling_request.mouse} has been rejected.",
+            created_at=timezone.now(),
+            request_type = 'culling',
+        )
+
         return redirect('all_requests')
+    
+class BreedingsClass:
+    @login_required
+    def all_breedings(request):
+        # Fetch all breedings
+        breedings = Breed.objects.all()
+        # Separate breedings into current and completed
+        current_breedings = breedings.filter(end_date__isnull=True)
+        completed_breedings = breedings.filter(end_date__isnull=False)
+        return render(request, 'breeding/breeds.html', {'current_breedings': current_breedings, 'completed_breedings': completed_breedings})
+    
+    @login_required
+    @role_required(allowed_roles=['breeder'])
+    def end_breeding(request, breeding_id):
+        # Fetch the breeding request
+        breeding = get_object_or_404(Breed, breed_id=breeding_id)
+        
+        # Call the end_breeding method to properly end the breeding process
+        breeding.end_breeding()
+
+        # Show success message
+        messages.success(request, "Breeding process ended successfully.")
+        return redirect('all_breedings')  # Redirect to the list of all breedings

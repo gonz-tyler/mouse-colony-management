@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Breeds Management</h1>
+
+<h2>Current Breeds</h2>
+{% if not current_breedings %}
+<p>No current breeding records available.</p>
+{% else %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Male</th>
+            <th>Female</th>
+            <th>Cage</th>
+            <th>Start Date</th>
+            {% if user.role == 'breeder' %}
+                <th>Actions</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for breeding in current_breedings %}
+        <tr>
+            <td>{{ breeding.breed_id }}</td>
+            <td>{{ breeding.male }}</td>
+            <td>{{ breeding.female }}</td>
+            <td>{{ breeding.cage }}</td>
+            <td>{{ breeding.start_date }}</td>
+            {% if user.role == 'breeder' %}
+            <td>
+                <form method="post" action="{% url 'end_breeding' breeding.breed_id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">End</button>
+                </form>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<h2>Completed Breeds</h2>
+{% if not completed_breedings %}
+<p>No past breeding records available.</p>
+{% else %}
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Male</th>
+            <th>Female</th>
+            <th>Cage</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for breeding in completed_breedings %}
+        <tr>
+            <td>{{ breeding.breed_id }}</td>
+            <td>{{ breeding.male }}</td>
+            <td>{{ breeding.female }}</td>
+            <td>{{ breeding.cage }}</td>
+            <td>{{ breeding.start_date }}</td>
+            <td>{{ breeding.end_date }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% endblock %}

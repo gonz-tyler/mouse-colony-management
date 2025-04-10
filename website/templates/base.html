@@ -10,6 +10,10 @@
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/fontawesome.min.css">
     <link rel="stylesheet" href="styles.css">
+    <link href="https://cdn.jsdelivr.net/npm/heroicons@1.0.6/dist/outline.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/heroicons@1.0.6/dist/solid.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
     <style>
         /* Center the form vertically and horizontally */
         .vh-100 {
@@ -183,6 +187,17 @@
     {% include 'navbar.html' %}
     <div class="container">
         <br>
+        <!-- Toast Container -->
+        <div aria-live="polite" aria-atomic="true" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+            <div id="live-toast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="toast-body">
+                <!-- Toast message will be inserted here -->
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            </div>
+        </div>
         {% if messages %}
         {% for message in messages %}
         <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -198,7 +213,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>
-    <script src="main.js"></script>
+    <script src="main.js"></script>    
 </body>
 
 </html>

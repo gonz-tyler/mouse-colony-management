@@ -87,7 +87,7 @@
                     <button type="submit" class="btn btn-danger btn-sm">Reject</button>
                 </form>
                 {% else %}
-                <form action="{% url 'cancel_breeding_request' transfer.id %}" method="post">
+                <form action="{% url 'cancel_breeding_request' breeding.id %}" method="post">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
                 </form>
@@ -137,7 +137,7 @@
                     <button type="submit" class="btn btn-danger btn-sm">Reject</button>
                 </form>
                 {% else %}
-                <form action="{% url 'cancel_culling_request' transfer.id %}" method="post">
+                <form action="{% url 'cancel_culling_request' culling.id %}" method="post">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
                 </form>
