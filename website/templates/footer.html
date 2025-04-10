@@ -7,4 +7,35 @@
         <a href="{% url 'terms_of_service' %}" class="text-light">Terms of Service</a>
       </p>
     </div>
+    <!-- Help Button -->
+    <button type="button" class="btn btn-outline-light mt-3" data-bs-toggle="modal" data-bs-target="#helpModal">
+      Help
+    </button>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content text-black">
+          <div class="modal-header">
+            <h5 class="modal-title" id="helpModalLabel">How the System Works</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-align-left">
+            <p>Welcome to Mouse Manager! Here's how the system works:</p>
+            <ul class="text-start">
+              <li>Register for an account to get started.</li>
+              <li>Log in to access your dashboard.</li>
+              <li>Manage your mouse colony by adding, editing, or removing records.</li>
+              <li>Track breeding pairs and offspring details.</li>
+              <li>Generate reports for your research or administrative needs.</li>
+              <li>Use the search and filter functionality to quickly find specific records.</li>
+              <li>Request breeding or culling actions through the Requests section.</li>
+              <li>Receive notifications for any updates or actions required.</li>
+              <li>Create and manage user accounts with different roles.</li>
+              <li>Create teams and manage mice together.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   </footer>
