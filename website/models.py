@@ -114,6 +114,8 @@ class Mouse(models.Model):
         ('BR', 'Bottom Right'),
     ]
     STATE_CHOICES = [('alive', 'Alive'), ('breeding', 'Breeding'), ('to_be_culled', 'To Be Culled'), ('deceased', 'Deceased')]
+    GENOTYPE_CHOICES = [('Wild type', 'wt'), ('Heterozygous', 'hat'), ('Knock out', 'ko'), ('N.A.', 'na')]
+
 
     mouse_id = models.AutoField(primary_key=True)
     strain = models.ForeignKey('Strain', on_delete=models.CASCADE)
@@ -129,6 +131,7 @@ class Mouse(models.Model):
     cull_date = models.DateTimeField(null=True, blank=True)
     weaned = models.BooleanField(default=False)
     weaned_date = models.DateField(null=True, blank=True)
+    genotype = models.CharField(max_length=20, choices=GENOTYPE_CHOICES, default='na', blank=False)
     # change mouse to mousekeeper table
     #mouse_keeper = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='kept_mice')
 
@@ -507,27 +510,6 @@ class Strain(models.Model):
 
     def __str__(self):
         return self.name
-    
-# ---------- Genotype Model ----------
-class Genotype(models.Model):
-    mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='genotypes')
-    gene = models.CharField(max_length=50)  # The gene or marker being tested
-    allele_1 = models.CharField(max_length=50)  # First allele
-    allele_2 = models.CharField(max_length=50)  # Second allele
-    test_date = models.DateField(auto_now_add=True)  # Date the test was performed
-
-    def __str__(self):
-        return f"{self.mouse.mouse_id} - {self.gene}: {self.allele_1}/{self.allele_2}"
-
-# ---------- Phenotype Model ----------
-class Phenotype(models.Model):
-    mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='phenotypes')
-    characteristic = models.CharField(max_length=100)  # The observable trait, e.g., "Coat Color"
-    description = models.CharField(max_length=255)  # A description of the phenotype
-    observation_date = models.DateField(auto_now_add=True)  # Date the phenotype was observed
-
-    def __str__(self):
-        return f"{self.mouse.mouse_id} - {self.characteristic}: {self.description}"
 
 # ---------- Notification Model ----------
 class Notification(models.Model):
