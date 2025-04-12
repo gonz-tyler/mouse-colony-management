@@ -9,6 +9,10 @@ import os
 from cloudinary.models import CloudinaryField
 import cloudinary
 import cloudinary.api
+import logging
+
+# Define logger
+logger = logging.getLogger(__name__)
 
 
     
@@ -118,8 +122,8 @@ class Mouse(models.Model):
     sex = models.CharField(max_length=1, choices=SEX_CHOICES, default='M', blank=False, null=False)
     father = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='father_of', limit_choices_to={'sex': 'M'})
     mother = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='mother_of', limit_choices_to={'sex': 'F'})
-    # earmark = models.CharField(max_length=20, choices=CLIPPED_CHOICES, blank=True, null=True)
-    earmark = models.JSONField(default=list, blank=True, null=True)
+    earmark = models.CharField(max_length=20, choices=CLIPPED_CHOICES, blank=True, null=True)
+    # earmark = models.JSONField(default=list, blank=True, null=True)
     clipped_date = models.DateField(null=True, blank=True)
     state = models.CharField(max_length=12, choices=STATE_CHOICES, default='alive', blank=False)
     cull_date = models.DateTimeField(null=True, blank=True)
@@ -340,17 +344,65 @@ class ProjectUser(models.Model):
 #         #     self.mouse.save()
 #         #     self.second_mouse.save()
 
-# ---------- Breeding Request Model ----------
-class BreedingRequest(models.Model):
+# ---------- Base Request Model ----------
+class BaseRequest(models.Model):
     STATUS_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('completed', 'Completed')]
     requester = models.ForeignKey(User, on_delete=models.CASCADE)
-    male_mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='breeding_male_requests', limit_choices_to={'sex': 'M'})
-    female_mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='breeding_female_requests', limit_choices_to={'sex': 'F'})
-    cage = models.ForeignKey(Cage, on_delete=models.CASCADE, help_text="Cage for breeding")
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     request_date = models.DateTimeField(auto_now_add=True)
     approval_date = models.DateTimeField(null=True, blank=True)
     comments = models.TextField(blank=True, null=True)
+    
+
+    class Meta:
+        abstract = True
+    
+    def is_completed(self):
+        return self.status == 'completed'
+    
+    def is_rejected(self):
+        return self.status == 'rejected'
+    
+    def is_approved(self):
+        return self.status == 'approved'
+    
+    def is_pending(self):
+        return self.status == 'pending'
+    
+    def get_request_type(self):
+        return self.__class__.__name__.replace('Request', '').lower()
+    
+    def get_absolute_url(self):
+        return f"/requests/{self.get_request_type()}/{self.id}/"
+    
+    def notify_status_change(self):
+        """Notify the requester about the status change."""
+        if self.status == 'approved':
+            msg = f"Your {self.get_request_type()} request has been approved."
+        elif self.status == 'rejected':
+            msg = f"Your {self.get_request_type()} request was rejected: {self.comments}"
+        else:
+            return
+        
+        if not self.requester:
+            logger.error(f"Requester for {self.get_request_type()} request ID {self.id} is None.")
+            return
+        
+        print(f"Sending notification to {self.requester.username}: {msg}")
+
+        Notification.objects.create(
+            recipient=self.requester,
+            message=msg,
+            request_type=self.get_request_type(),
+            request_id=self.id,
+        )
+
+# ---------- Breeding Request Model ----------
+class BreedingRequest(BaseRequest):
+    male_mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='breeding_male_requests', limit_choices_to={'sex': 'M'})
+    female_mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='breeding_female_requests', limit_choices_to={'sex': 'F'})
+    cage = models.ForeignKey(Cage, on_delete=models.CASCADE, help_text="Cage for breeding")
+    requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='breeding_requests', null=True, blank=True)
 
     def clean(self):
         if self.male_mouse.sex != 'M' or self.female_mouse.sex != 'F':
@@ -380,14 +432,9 @@ class BreedingRequest(models.Model):
         self.save()
 
 # ---------- Culling Request Model ----------
-class CullingRequest(models.Model):
-    STATUS_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('completed', 'Completed')]
-    requester = models.ForeignKey(User, on_delete=models.CASCADE)
+class CullingRequest(BaseRequest):
     mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='culling_requests')
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    request_date = models.DateTimeField(auto_now_add=True)
-    approval_date = models.DateTimeField(null=True, blank=True)
-    comments = models.TextField(blank=True, null=True)
+    requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='culling_requests', null=True, blank=True)
 
     def complete(self):
         self.status = 'completed'
@@ -406,16 +453,11 @@ class CullingRequest(models.Model):
         self.save()
 
 # ---------- Transfer Request Model ----------
-class TransferRequest(models.Model):
-    STATUS_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('completed', 'Completed')]
-    requester = models.ForeignKey(User, on_delete=models.CASCADE)
+class TransferRequest(BaseRequest):
     mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='transfer_requests')
     source_cage = models.ForeignKey(Cage, on_delete=models.SET_NULL, null=True, related_name='source_transfers')
     destination_cage = models.ForeignKey(Cage, on_delete=models.CASCADE, related_name='destination_transfers')
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    request_date = models.DateTimeField(auto_now_add=True)
-    approval_date = models.DateTimeField(null=True, blank=True)
-    comments = models.TextField(blank=True, null=True)
+    requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transfer_requests', null=True, blank=True)
 
     def clean(self):
         # Ensure that destination_cage is set before checking
@@ -487,3 +529,14 @@ class Phenotype(models.Model):
     def __str__(self):
         return f"{self.mouse.mouse_id} - {self.characteristic}: {self.description}"
 
+# ---------- Notification Model ----------
+class Notification(models.Model):
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    request_type = models.CharField(max_length=20, null=True, blank=True, help_text="Type of request associated with the notification.")
+    request_id = models.IntegerField(null=True, blank=True, help_text="ID of the associated request.")
+
+    def __str__(self):
+        return f"Notification for {self.recipient.username} - {self.message[:20]}..."

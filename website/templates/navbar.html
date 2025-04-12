@@ -23,6 +23,12 @@
                 <li class="nav-item px-4">
                     <a class="nav-link fs-4" href="{% url 'all_requests' %}">Requests</a>
                 </li>
+                <li class="nav-item px-4">
+                    <a class="nav-link fs-4" href="{% url 'all_breedings' %}">Breedings</a>
+                </li>
+                <li class="nav-item px-4">
+                    <a class="nav-link fs-4" href="{% url 'manage_users' %}">Users</a>
+                </li>
                 <!-- <li class="nav-item">
                     <a class="nav-link" href="{% url 'index' %}">Link</a>
                 </li>
@@ -58,7 +64,7 @@
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="profileDropdown">
                             <li><a class="dropdown-item" href="{% url 'user_profile' user.username %}">Profile</a></li>
-                            <li><a class="dropdown-item" href="{% url 'index' %}">Settings</a></li>
+                            <li><a class="dropdown-item" href="{% url 'notifications' user.username %}">Notifications</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{% url 'logout_user' %}">Logout</a></li>
                         </ul>
