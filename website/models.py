@@ -114,7 +114,7 @@ class Mouse(models.Model):
         ('BR', 'Bottom Right'),
     ]
     STATE_CHOICES = [('alive', 'Alive'), ('breeding', 'Breeding'), ('to_be_culled', 'To Be Culled'), ('deceased', 'Deceased')]
-    GENOTYPE_CHOICES = [('Wild type', 'wt'), ('Heterozygous', 'hat'), ('Knock out', 'ko'), ('N/A', 'N/A')]
+    GENOTYPE_CHOICES = [('Wild type', 'Wild type'), ('Heterozygous', 'Heterozygous'), ('Knock out', 'Knock out'), ('N/A', 'N/A')]
 
 
     mouse_id = models.AutoField(primary_key=True)
