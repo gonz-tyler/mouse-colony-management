@@ -149,7 +149,7 @@ class Mouse(models.Model):
         """Return a readable string of genotype choices."""
         # Map the list of choices to their corresponding labels in GENOTYPE_CHOICES
         choice_dict = dict(self.GENOTYPE_CHOICES)
-        return ''.join(choice_dict.get(choice, choice) for choice in self.genotype)
+        return choice_dict.get(self.genotype, self.genotype)
 
     def set_earmark_choices(self, choices):
         """Set the list of earmark choices."""
