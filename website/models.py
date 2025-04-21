@@ -114,7 +114,7 @@ class Mouse(models.Model):
         ('BR', 'Bottom Right'),
     ]
     STATE_CHOICES = [('alive', 'Alive'), ('breeding', 'Breeding'), ('to_be_culled', 'To Be Culled'), ('deceased', 'Deceased')]
-    GENOTYPE_CHOICES = [('Wild type', 'Wild type'), ('Heterozygous', 'Heterozygous'), ('Knock out', 'Knock out'), ('N/A', 'N/A')]
+    GENOTYPE_CHOICES = [('wt', 'Wild type'), ('ht', 'Heterozygous'), ('ko', 'Knock out'), ('na', 'N/A')]
 
 
     mouse_id = models.AutoField(primary_key=True)
@@ -144,6 +144,12 @@ class Mouse(models.Model):
     def get_earmark_choices(self):
         """Return the list of earmark choices directly."""
         return self.earmark if self.earmark else []
+    
+    def get_genotype_display(self):
+        """Return a readable string of genotype choices."""
+        # Map the list of choices to their corresponding labels in GENOTYPE_CHOICES
+        choice_dict = dict(self.GENOTYPE_CHOICES)
+        return ''.join(choice_dict.get(choice, choice) for choice in self.genotype)
 
     def set_earmark_choices(self, choices):
         """Set the list of earmark choices."""
