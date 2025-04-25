@@ -191,23 +191,52 @@ def delete_notification(request, notification_id):
 def genetic_tree(request, mouse_id):
     mouse = get_object_or_404(Mouse, mouse_id=mouse_id)
     
-    # Recursive function to get only parents and their parents recursively
-    def get_direct_ancestor_structure(mouse):
-        # Assuming `get_parents()` is a method that fetches direct parents only
-        ancestors = []
-        for parent in mouse.get_parents():  # Replace with actual logic to get parents
-            ancestors.append({
-                'name': f"Strain {parent.strain} - TubeID {parent.tube_id}",
-                'children': get_direct_ancestor_structure(parent)
+    # Build ancestor + sibling tree, marking the target for highlight
+    def build_ancestor_tree(m, target, visited=None):
+        if visited is None:
+            visited = {target.pk}
+        trees = []
+        ancestors_pks = {a.pk for a in target.get_ancestors()}
+        for p in m.get_parents():
+            # detect cycle on parent
+            if p.pk in visited:
+                trees.append({
+                    'name': f"Strain {p.strain} - TubeID {p.tube_id}",
+                    'highlight': False,
+                    'cycle': True,
+                    'children': []
+                })
+                continue
+            new_vis = set(visited) | {p.pk}
+            # Include all children of this parent (siblings + target)
+            all_kids = list(p.mother_of.all()) + list(p.father_of.all())
+            children = []
+            for kid in all_kids:
+                cycle_kid = kid.pk in new_vis
+                children.append({
+                    'name': f"Strain {kid.strain} - TubeID {kid.tube_id}",
+                    'highlight': kid.pk == target.pk,
+                    'cycle': cycle_kid,
+                    'children': build_ancestor_tree(kid, target, new_vis) if (kid.pk in ancestors_pks and not cycle_kid) else []
+                })
+            trees.append({
+                'name': f"Strain {p.strain} - TubeID {p.tube_id}",
+                'highlight': False,
+                'cycle': False,
+                'children': children
             })
-        return ancestors
+        return trees
 
     tree_data = {
         'name': f"Strain {mouse.strain} - TubeID {mouse.tube_id}",
-        'children': get_direct_ancestor_structure(mouse)
+        'highlight': True,
+        'children': build_ancestor_tree(mouse, mouse)
     }
 
-    return render(request, 'genetictree.html', {'tree_data': json.dumps(tree_data), 'mouse': mouse})
+    return render(request, 'genetictree.html', {
+        'tree_data': json.dumps(tree_data),
+        'mouse': mouse
+    })
 
 @login_required
 def manage_users(request):
@@ -257,9 +286,21 @@ class MouseClass:
     @role_required(allowed_roles=['leader', 'staff', 'new_staff'])
     def view_mouse(request, mouse_id):
         if request.user.is_authenticated:
-            #look up mouse
-            mouse = Mouse.objects.get(mouse_id=mouse_id)
-            return render(request, 'mice/mouse_details.html', {'mouse':mouse})
+            mouse = get_object_or_404(Mouse, mouse_id=mouse_id)
+            # Generate genetic tree data
+            def get_direct_ancestor_structure(m):
+                ancestors = []
+                for parent in m.get_parents():
+                    ancestors.append({
+                        'name': f"Strain {parent.strain} - TubeID {parent.tube_id}",
+                        'children': get_direct_ancestor_structure(parent)
+                    })
+                return ancestors
+            tree_data = {
+                'name': f"Strain {mouse.strain} - TubeID {mouse.tube_id}",
+                'children': get_direct_ancestor_structure(mouse)
+            }
+            return render(request, 'mice/mouse_details.html', {'mouse': mouse, 'tree_data': json.dumps(tree_data)})
         else:
             messages.success(request, 'You must be logged in to view this page.')
             return redirect('index')
