@@ -97,13 +97,6 @@ class TeamMembership(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.team.name} ({self.user.role})"
 
-# ---------- Weight Model ----------
-class Weight(models.Model):
-    weight_id = models.AutoField(primary_key=True)
-    mouse = models.ForeignKey('Mouse', on_delete=models.CASCADE)
-    weight = models.DecimalField(max_digits=5, decimal_places=2)
-    measured_at = models.DateTimeField(null=True, blank=True)
-
 # ---------- Mouse Model ----------
 class Mouse(models.Model):
     SEX_CHOICES = [('M', 'Male'), ('F', 'Female')]
@@ -114,7 +107,7 @@ class Mouse(models.Model):
         ('BR', 'Bottom Right'),
     ]
     STATE_CHOICES = [('alive', 'Alive'), ('breeding', 'Breeding'), ('to_be_culled', 'To Be Culled'), ('deceased', 'Deceased')]
-    GENOTYPE_CHOICES = [('Wild type', 'wt'), ('Heterozygous', 'hat'), ('Knock out', 'ko'), ('N.A.', 'N/A')]
+    GENOTYPE_CHOICES = [('wt', 'Wild type'), ('ht', 'Heterozygous'), ('ko', 'Knock out'), ('na', 'N/A')]
 
 
     mouse_id = models.AutoField(primary_key=True)
@@ -124,8 +117,8 @@ class Mouse(models.Model):
     sex = models.CharField(max_length=1, choices=SEX_CHOICES, default='M', blank=False, null=False)
     father = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='father_of', limit_choices_to={'sex': 'M'})
     mother = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='mother_of', limit_choices_to={'sex': 'F'})
-    earmark = models.CharField(max_length=20, choices=CLIPPED_CHOICES, blank=True, null=True)
-    # earmark = models.JSONField(default=list, blank=True, null=True)
+    #earmark = models.CharField(max_length=20, choices=CLIPPED_CHOICES, blank=True, null=True)
+    earmark = models.JSONField(default=list, blank=True, null=True)
     clipped_date = models.DateField(null=True, blank=True)
     state = models.CharField(max_length=12, choices=STATE_CHOICES, default='alive', blank=False)
     cull_date = models.DateTimeField(null=True, blank=True)
@@ -144,6 +137,12 @@ class Mouse(models.Model):
     def get_earmark_choices(self):
         """Return the list of earmark choices directly."""
         return self.earmark if self.earmark else []
+    
+    def get_genotype_display(self):
+        """Return a readable string of genotype choices."""
+        # Map the list of choices to their corresponding labels in GENOTYPE_CHOICES
+        choice_dict = dict(self.GENOTYPE_CHOICES)
+        return choice_dict.get(self.genotype, self.genotype)
 
     def set_earmark_choices(self, choices):
         """Set the list of earmark choices."""
@@ -235,118 +234,6 @@ class MouseKeeper(models.Model):
     def __str__(self):
         return f"Mouse {self.mouse.mouse_id} - Keeper {self.user or self.team}"
 
-# ---------- Project Model ----------
-class Project(models.Model):
-    project_id = models.BigAutoField(primary_key=True)
-    description = models.TextField()
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField(blank=True, null=True)
-
-# ---------- Project Mouse Model ----------
-class ProjectMouse(models.Model):
-    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    mouse_id = models.ForeignKey(Mouse, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('project_id', 'mouse_id')
-
-# ---------- Project User Model ----------
-class ProjectUser(models.Model):
-    project_id = models.ForeignKey(Project, on_delete=models.CASCADE)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('project_id', 'user_id')
-
-# # ---------- Request Model ----------
-# class Request(models.Model):
-#     REQUEST_TYPES = [
-#         ('breed', 'Breeding Request'),
-#         ('cull', 'Culling Request'),
-#         # ('end_breed', 'End Breeding Request'),
-#     ]
-#     STATUS_CHOICES = [
-#         ('pending', 'Pending'),
-#         ('approved', 'Approved'),
-#         ('rejected', 'Rejected'),
-#         ('completed', 'Completed'),
-#     ]
-#     request_id = models.AutoField(primary_key=True)
-#     requester = models.ForeignKey(User, on_delete=models.CASCADE)
-#     mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, related_name='primary_mouse_requests')
-#     second_mouse = models.ForeignKey(Mouse, on_delete=models.CASCADE, null=True, blank=True, related_name='secondary_mouse_requests', help_text="For breeding requests, select a second mouse of the opposite sex.")
-#     cage = models.ForeignKey(Cage, on_delete=models.CASCADE, null=True, blank=True, help_text="Required for breeding requests.")
-#     request_type = models.CharField(max_length=10, choices=REQUEST_TYPES)
-#     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-#     submitted_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-#     comments = models.TextField(blank=True, null=True)
-
-#     def clean(self):
-#         """Custom validation for the request model."""
-#         # Ensure second_mouse is provided only for breeding requests
-#         if self.request_type == 'breed':
-#             if not self.second_mouse:
-#                 raise ValidationError("Breeding requests must specify a second mouse.")
-#             # Ensure the two mice are of opposite sex
-#             if self.mouse.sex == self.second_mouse.sex:
-#                 raise ValidationError("For breeding requests, the two mice must be of opposite sexes.")
-#             # Ensure a cage is provided for breeding requests
-#             if not self.cage:
-#                 raise ValidationError("A cage must be specified for breeding requests.")
-#         elif self.request_type == 'cull':
-#             if self.second_mouse:
-#                 raise ValidationError("Culling requests should not have a second mouse.")
-#             # Ensure that cage is not set for non-breeding requests
-#             if self.cage:
-#                 raise ValidationError(f"A cage should not be specified for {self.request_type} requests.")
-
-#         super().clean()
-
-#     def __str__(self):
-#         if self.request_type == 'breed':
-#             return f"Breeding Request: {self.mouse.mouse_id} with {self.second_mouse.mouse_id} by {self.requester.username}"
-#         return f"{self.request_type} Request by {self.requester.username} for Mouse {self.mouse.mouse_id}"
-
-#     def approve(self):
-#         self.status = 'approved'
-#         self.save()
-
-#     def reject(self):
-#         self.status = 'rejected'
-#         self.save()
-
-#     def complete(self):
-#         self.status = 'completed'
-#         self.save()
-
-#         # Handle culling request completion
-#         if self.request_type == 'cull':
-#             self.mouse.state = 'deceased'
-#             self.mouse.cull_date = dt.datetime.now()
-#             self.mouse.save()
-
-#         # Handle breeding request completion
-#         if self.request_type == 'breed':
-#             self.mouse.state = 'breeding'  # Update first mouse to breeding state
-#             self.second_mouse.state = 'breeding'  # Update second mouse to breeding state
-#             self.mouse.save()
-#             self.second_mouse.save()
-
-#             # Create a new Breed instance
-#             Breed.objects.create(
-#                 male=self.mouse,
-#                 female=self.second_mouse,
-#                 cage=self.cage,
-#             )
-
-#         # # Handle end breeding request completion
-#         # if self.request_type == 'end_breed':
-#         #     self.mouse.state = 'alive'  # Update first mouse to alive state
-#         #     self.second_mouse.state = 'alive'  # Update second mouse to alive state
-#         #     self.mouse.save()
-#         #     self.second_mouse.save()
-
 # ---------- Base Request Model ----------
 class BaseRequest(models.Model):
     STATUS_CHOICES = [('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected'), ('completed', 'Completed')]
@@ -408,9 +295,11 @@ class BreedingRequest(BaseRequest):
     requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='breeding_requests', null=True, blank=True)
 
     def clean(self):
-        if self.male_mouse.sex != 'M' or self.female_mouse.sex != 'F':
+        male_mouse = getattr(self, 'male_mouse', None)
+        female_mouse = getattr(self, 'female_mouse', None)
+        if (male_mouse and male_mouse.sex != 'M') or (female_mouse and female_mouse.sex != 'F'):
             raise ValidationError("For breeding, select one male and one female mouse.")
-        if not self.cage:
+        if not self.cage_id:
             raise ValidationError("A cage must be specified for breeding requests.")
         super().clean()
 
@@ -464,11 +353,11 @@ class TransferRequest(BaseRequest):
 
     def clean(self):
         # Ensure that destination_cage is set before checking
-        if self.destination_cage is None:
+        if self.destination_cage_id is None:
             raise ValidationError({'destination_cage': 'Destination cage cannot be empty.'})
         
         # Custom validation to ensure source_cage and destination_cage are different
-        if self.source_cage == self.destination_cage:
+        if self.source_cage_id == self.destination_cage_id:
             raise ValidationError({'destination_cage': 'Destination cage cannot be the same as the source cage.'})
 
     def approve(self, approver):

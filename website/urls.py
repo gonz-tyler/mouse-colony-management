@@ -18,7 +18,7 @@ urlpatterns = [
     path('edit-profile/', views.edit_profile, name='edit_profile'),
     path('profile/<str:username>/', views.user_profile, name="user_profile"),
     path('notifications/<str:username>/', views.notifications, name="notifications"), # Notifications page
-    path('notifications/mark-as-read/<int:notification_id>/', views.mark_notification_as_read, name='mark_notification_as_read'), # Mark notification as read
+    path('notifications/mark-as-read/<str:username>/<int:notification_id>/', views.mark_notification_as_read, name='mark_notification_as_read'), # Mark notification as read
     path('notifications/delete/<int:notification_id>/', views.delete_notification, name='delete_notification'), # Delete notification
     path('genetic-tree/<int:mouse_id>/', views.genetic_tree, name='genetic_tree'), # Genetic Tree page
     # User Management
@@ -75,7 +75,7 @@ urlpatterns = [
     path('requests/reject-breeding/<int:breeding_id>/', views.BreedingRequestClass.reject_breeding_request, name='reject_breeding'),
     # culling
     path('requests/create/culling-request', views.CullingRequestClass.create_culling_request, name="create_culling_request"),
-    path('requests/cancel-culling/<int:breeding_id>', views.CullingRequestClass.cancel_culling_request, name="cancel_culling_request"),
+    path('requests/cancel-culling/<int:culling_id>', views.CullingRequestClass.cancel_culling_request, name="cancel_culling_request"),
     path('requests/approve-culling/<int:culling_id>/', views.CullingRequestClass.approve_culling_request, name='approve_culling'),
     path('requests/reject-culling/<int:culling_id>/', views.CullingRequestClass.reject_culling_request, name='reject_culling'),
 

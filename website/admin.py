@@ -11,7 +11,6 @@ class CustomUserAdmin(DefaultUserAdmin):
         (None, {'fields': ('role',)}),
     )
 
-admin.site.register(Weight)
 admin.site.register(Cage)
 admin.site.register(CageHistory)
 admin.site.register(Team)
@@ -23,6 +22,3 @@ admin.site.register(TransferRequest)
 admin.site.register(CullingRequest)
 admin.site.register(Breed)
 admin.site.register(Strain)
-admin.site.register(Project)
-admin.site.register(ProjectMouse)
-admin.site.register(ProjectUser)
