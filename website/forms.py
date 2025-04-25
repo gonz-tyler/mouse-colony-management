@@ -20,24 +20,30 @@ class RegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)  # Keep email as required
     first_name = forms.CharField(max_length=30, required=True)  # First name
     last_name = forms.CharField(max_length=30, required=True)  # Last name
-    # terms_of_service = forms.BooleanField(required=True, label='I agree to the Terms of Service')
-    # privacy_policy = forms.BooleanField(required=True, label='I agree to the Privacy Policy')
+    profile_picture = forms.ImageField(required=False)  # Ensure profile picture is an image
 
     class Meta:
         model = User  # Use your custom User model
-        fields = ("profile_picture", "username", "first_name", "last_name", "email", "password1", "password2", "role") #, "terms_of_service", "privacy_policy")
+        fields = ("profile_picture", "username", "first_name", "last_name", "email", "password1", "password2", "role")
 
     def clean_email(self):
         # This method will be called automatically to clean the email field
         email = self.cleaned_data.get("email")
         if email and not email.endswith('@abdn.ac.uk'):
-            raise ValidationError(_('Email must be an @abdn.ac.uk address.'))
+            raise ValidationError('Email must be an @abdn.ac.uk address.')
         
         # Check if the email already exists in the database
         if User.objects.filter(email=email).exists():
-            raise ValidationError(_('This email address is already in use.'))
+            raise ValidationError('This email address is already in use.')
         
         return email
+
+    def clean_profile_picture(self):
+        # Ensure the uploaded file is an image
+        profile_picture = self.cleaned_data.get("profile_picture")
+        if profile_picture and not profile_picture.content_type.startswith("image/"):
+            raise ValidationError("The uploaded file must be an image.")
+        return profile_picture
 
     def save(self, commit=True):
         user = super(RegistrationForm, self).save(commit=False)
@@ -47,9 +53,20 @@ class RegistrationForm(UserCreationForm):
         return user
     
 class ProfileUpdateForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=30, required=True)  # First name
+    last_name = forms.CharField(max_length=30, required=True)  # Last name
+    profile_picture = forms.ImageField(required=False)  # Ensure profile picture is an image
+
     class Meta:
         model = User
         fields = ['profile_picture', 'username', 'first_name', 'last_name']
+
+    def clean_profile_picture(self):
+        # Ensure the uploaded file is an image
+        profile_picture = self.cleaned_data.get("profile_picture")
+        if profile_picture and not profile_picture.content_type.startswith("image/"):
+            raise ValidationError("The uploaded file must be an image.")
+        return profile_picture
     
 class AddMouseForm(forms.ModelForm):
     team = forms.ModelChoiceField(queryset=Team.objects.none(), required=False, label='Select Team')
@@ -62,6 +79,7 @@ class AddMouseForm(forms.ModelForm):
     strain = forms.ModelChoiceField(queryset=Strain.objects.all(), required=False, label='Select Strain')
     new_strain = forms.CharField(max_length=100, required=False, label='New Strain')
     genotype = forms.ChoiceField(choices=Mouse.GENOTYPE_CHOICES, required=False, label="Select genotype")
+    state = forms.ChoiceField(choices=Mouse.STATE_CHOICES, required=False, initial='alive')
 
     class Meta:
         model = Mouse
@@ -113,8 +131,6 @@ class AddMouseForm(forms.ModelForm):
             
             # Filter the split_earmark list to include only valid choices
             initial_choices = [choice for choice in split_earmark if choice in valid_choices]
-            
-            print(f"Initial earmark values (as list): {initial_choices} length: {len(initial_choices)}")
             self.fields['earmark'].initial = initial_choices
 
         # Filter teams based on the current user's memberships
@@ -123,23 +139,38 @@ class AddMouseForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        
+
         strain = cleaned_data.get('strain')
         new_strain = cleaned_data.get('new_strain')
-        
-        # If a new strain is provided, create it and assign to the Mouse instance
-        if new_strain:
-            strain = Strain.objects.create(name=new_strain)
-            cleaned_data['strain'] = strain
-            
+
+        if new_strain and strain:
+            self.add_error('new_strain', 'Cannot specify both an existing strain and a new strain.')
+
+        weaned = cleaned_data.get('weaned')
+        weaned_date = cleaned_data.get('weaned_date')
+        if weaned and not weaned_date:
+            self.add_error('weaned_date', 'Weaned date is required when weaned is True.')
+
+        if weaned_date and not weaned:
+            self.add_error('weaned_date', 'Weaned date provided but weaned is not checked.')
+
+        if 'state' not in cleaned_data or not cleaned_data['state']:
+            cleaned_data['state'] = 'alive'
+
         return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
 
-        # Convert the list of earmark choices into a comma-separated string for saving to the model
+        # Handle earmarks
         if isinstance(instance.earmark, list):
             instance.earmark = ','.join(instance.earmark)
+
+        # Handle new strain creation
+        new_strain = self.cleaned_data.get('new_strain')
+        if new_strain:
+            strain = Strain.objects.create(name=new_strain)
+            instance.strain = strain
 
         if commit:
             instance.save()
@@ -155,6 +186,9 @@ class CageForm(forms.ModelForm):
     class Meta:
         model = Cage
         fields = ['cage_number', 'cage_type', 'location']
+
+    def clean_cage_number(self):
+        return self.cleaned_data['cage_number'].strip()
 
 class TransferRequestForm(forms.ModelForm):
     class Meta:

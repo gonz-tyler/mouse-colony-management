@@ -139,7 +139,7 @@ def notifications(request, username):
 
 @login_required
 def mark_notification_as_read(request, username, notification_id):
-    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    notification = get_object_or_404(Notification, id=notification_id, recipient=request.user)
     notification.is_read = True
     notification.save()
     return redirect('notifications', username=username)
@@ -190,6 +190,7 @@ def manage_users(request):
 
 
 @login_required
+@role_required(allowed_roles=['leader'])
 def update_user_role(request, user_id):
     """Update user roles (only allowed by lead users)."""
     if request.method == "POST":
@@ -600,7 +601,6 @@ class AllRequestsClass:
         }
 
         return render(request, 'requests/all_requests.html', context)
-
 
 class TransferRequestClass:
     @login_required
