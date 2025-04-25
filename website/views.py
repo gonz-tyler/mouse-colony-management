@@ -17,6 +17,11 @@ import json
 
 from django.views.generic.edit import UpdateView
 from django.contrib.auth.forms import PasswordResetForm
+import csv
+from django.http import HttpResponse
+from django.apps import apps
+import zipfile
+from io import BytesIO, StringIO
 
 # --- Messages ---
 record_added = "Record has been added successfully."
@@ -28,6 +33,34 @@ def terms_of_service(request):
     return render(request, 'legal/terms-of-service.html')
 def privacy_policy(request):
     return render(request, 'legal/privacy-policy.html')
+
+@login_required
+def download_database_csv(request):
+    # Use binary buffer for zip file
+    zip_buffer = BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+        for model in apps.get_models():
+            model_name = model._meta.model_name
+            file_name = f"{model_name}.csv"
+
+            # Use text buffer for CSV
+            csv_buffer = StringIO()
+            writer = csv.writer(csv_buffer)
+
+            fields = [field.name for field in model._meta.fields]
+            writer.writerow(fields)
+            for obj in model.objects.all():
+                writer.writerow([getattr(obj, field) for field in fields])
+
+            # Write the CSV string as a file inside the zip (encoded to bytes)
+            zip_file.writestr(file_name, csv_buffer.getvalue().encode('utf-8'))
+
+    # Prepare the response
+    zip_buffer.seek(0)
+    response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename="database_dump.zip"'
+    return response
 
 def password_reset(request):
     if request.method == "POST":
