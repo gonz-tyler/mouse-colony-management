@@ -207,7 +207,7 @@ def genetic_tree(request, mouse_id):
         }
         # Add parents and parent-child edges
         for parent in m.get_parents():
-            if parent:
+            if parent and parent.mouse_id not in visited:
                 nodes[parent.mouse_id] = {
                     'id': str(parent.mouse_id),
                     'label': f"Strain {parent.strain} - TubeID {parent.tube_id}",
@@ -216,25 +216,25 @@ def genetic_tree(request, mouse_id):
                 edges.add((str(parent.mouse_id), str(m.mouse_id)))
                 add_mouse_and_relations(parent, highlight_id, visited)
                 # Add siblings (children of parent)
-                for sibling in parent.get_descendants():
-                    if sibling.mouse_id != m.mouse_id:
+                for sibling in list(parent.mother_of.all()) + list(parent.father_of.all()):
+                    if sibling.mouse_id != m.mouse_id and sibling.mouse_id not in visited:
                         nodes[sibling.mouse_id] = {
                             'id': str(sibling.mouse_id),
                             'label': f"Strain {sibling.strain} - TubeID {sibling.tube_id}",
                             'highlight': sibling.mouse_id == highlight_id
                         }
-                        # Add parent-sibling edge
                         edges.add((str(parent.mouse_id), str(sibling.mouse_id)))
                         add_mouse_and_relations(sibling, highlight_id, visited)
         # Add children and child-parent edges
         for child in list(m.mother_of.all()) + list(m.father_of.all()):
-            nodes[child.mouse_id] = {
-                'id': str(child.mouse_id),
-                'label': f"Strain {child.strain} - TubeID {child.tube_id}",
-                'highlight': child.mouse_id == highlight_id
-            }
-            edges.add((str(m.mouse_id), str(child.mouse_id)))
-            add_mouse_and_relations(child, highlight_id, visited)
+            if child.mouse_id not in visited:
+                nodes[child.mouse_id] = {
+                    'id': str(child.mouse_id),
+                    'label': f"Strain {child.strain} - TubeID {child.tube_id}",
+                    'highlight': child.mouse_id == highlight_id
+                }
+                edges.add((str(m.mouse_id), str(child.mouse_id)))
+                add_mouse_and_relations(child, highlight_id, visited)
     
     add_mouse_and_relations(mouse, mouse.mouse_id, set())
 
