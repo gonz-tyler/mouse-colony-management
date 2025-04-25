@@ -191,50 +191,60 @@ def delete_notification(request, notification_id):
 def genetic_tree(request, mouse_id):
     mouse = get_object_or_404(Mouse, mouse_id=mouse_id)
     
-    # Build ancestor + sibling tree, marking the target for highlight
-    def build_ancestor_tree(m, target, visited=None):
-        if visited is None:
-            visited = {target.pk}
-        trees = []
-        ancestors_pks = {a.pk for a in target.get_ancestors()}
-        for p in m.get_parents():
-            # detect cycle on parent
-            if p.pk in visited:
-                trees.append({
-                    'name': f"Strain {p.strain} - TubeID {p.tube_id}",
-                    'highlight': False,
-                    'cycle': True,
-                    'children': []
-                })
-                continue
-            new_vis = set(visited) | {p.pk}
-            # Include all children of this parent (siblings + target)
-            all_kids = list(p.mother_of.all()) + list(p.father_of.all())
-            children = []
-            for kid in all_kids:
-                cycle_kid = kid.pk in new_vis
-                children.append({
-                    'name': f"Strain {kid.strain} - TubeID {kid.tube_id}",
-                    'highlight': kid.pk == target.pk,
-                    'cycle': cycle_kid,
-                    'children': build_ancestor_tree(kid, target, new_vis) if (kid.pk in ancestors_pks and not cycle_kid) else []
-                })
-            trees.append({
-                'name': f"Strain {p.strain} - TubeID {p.tube_id}",
-                'highlight': False,
-                'cycle': False,
-                'children': children
-            })
-        return trees
+    # Build a comprehensive genetic network for Cytoscape
+    nodes = {}
+    edges = set()
+    
+    def add_mouse_and_relations(m, highlight_id, visited):
+        if m.mouse_id in visited:
+            return
+        visited.add(m.mouse_id)
+        # Add node
+        nodes[m.mouse_id] = {
+            'id': str(m.mouse_id),
+            'label': f"Strain {m.strain} - TubeID {m.tube_id}",
+            'highlight': m.mouse_id == highlight_id
+        }
+        # Add parents and parent-child edges
+        for parent in m.get_parents():
+            if parent:
+                nodes[parent.mouse_id] = {
+                    'id': str(parent.mouse_id),
+                    'label': f"Strain {parent.strain} - TubeID {parent.tube_id}",
+                    'highlight': parent.mouse_id == highlight_id
+                }
+                edges.add((str(parent.mouse_id), str(m.mouse_id)))
+                add_mouse_and_relations(parent, highlight_id, visited)
+                # Add siblings (children of parent)
+                for sibling in parent.get_descendants():
+                    if sibling.mouse_id != m.mouse_id:
+                        nodes[sibling.mouse_id] = {
+                            'id': str(sibling.mouse_id),
+                            'label': f"Strain {sibling.strain} - TubeID {sibling.tube_id}",
+                            'highlight': sibling.mouse_id == highlight_id
+                        }
+                        # Add parent-sibling edge
+                        edges.add((str(parent.mouse_id), str(sibling.mouse_id)))
+                        add_mouse_and_relations(sibling, highlight_id, visited)
+        # Add children and child-parent edges
+        for child in list(m.mother_of.all()) + list(m.father_of.all()):
+            nodes[child.mouse_id] = {
+                'id': str(child.mouse_id),
+                'label': f"Strain {child.strain} - TubeID {child.tube_id}",
+                'highlight': child.mouse_id == highlight_id
+            }
+            edges.add((str(m.mouse_id), str(child.mouse_id)))
+            add_mouse_and_relations(child, highlight_id, visited)
+    
+    add_mouse_and_relations(mouse, mouse.mouse_id, set())
 
-    tree_data = {
-        'name': f"Strain {mouse.strain} - TubeID {mouse.tube_id}",
-        'highlight': True,
-        'children': build_ancestor_tree(mouse, mouse)
+    cy_data = {
+        'nodes': [{'data': n} for n in nodes.values()],
+        'edges': [{'data': {'source': s, 'target': t}} for (s, t) in edges]
     }
 
     return render(request, 'genetictree.html', {
-        'tree_data': json.dumps(tree_data),
+        'cy_data': json.dumps(cy_data),
         'mouse': mouse
     })
 
