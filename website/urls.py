@@ -9,6 +9,7 @@ urlpatterns = [
     # path('admin/', admin.site.urls),
     path('legal/terms-of-service/', views.terms_of_service, name='terms_of_service'), # legal
     path('legal/privacy-policy/', views.privacy_policy, name='privacy_policy'), # legal
+    path('download-database/', views.download_database_csv, name='download_database_csv'),
     path('', views.home_view, name='index'),  # Index page
     path('login/', auth_views.LoginView.as_view(), name='login'),  # Login page
     path('register/', views.register, name='register'), # Register page

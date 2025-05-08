@@ -60,6 +60,7 @@
         <div class="mt-4">
             <h3>Profile Actions</h3>
             <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'download_database_csv' %}" class="btn btn-success">Download Database as CSV</a>
                 <a href="{% url 'edit_profile' %}" class="btn btn-primary">Edit Profile</a>
                 <a href="{% url 'change_password' %}" class="btn btn-secondary">Change Password</a>
                 <a href="{% url 'logout_user' %}" class="btn btn-danger">Logout</a>

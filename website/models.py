@@ -80,6 +80,10 @@ class User(AbstractUser):
 
 # ---------- Team Model ----------
 class Team(models.Model):
+    """
+    Represents a team with a unique name and a creation timestamp.
+    """
+
     name = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

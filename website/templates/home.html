@@ -16,38 +16,131 @@
     </a>
     {% endif %}
 </div>
+
+<form method="GET" class="mb-3 d-flex align-items-center">
+    <!-- Search Bar (1/4 width) -->
+    <div class="input-group" style="width: 25%;">
+        <input type="text" id="searchInput" class="form-control" placeholder="Enter search term" autocomplete="off">
+        <button type="button" id="addFilterBtn" class="btn btn-primary">Search</button>
+        <button type="button" id="clearFiltersBtn" class="btn btn-danger">X</button>
+    </div>
+
+    <!-- Filter Box Container -->
+    <div id="filterBoxContainer" class="d-flex flex-wrap ms-3"></div>
+</form>
+
+<style>
+    th a {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    th a:hover {
+        text-decoration: underline; /* Optional: adds underline only on hover */
+    }
+</style>
+
+
 <table class="table table-striped table-hover table-bordered border-secondary">
     <thead class="table-primary">
         <tr>
-            <th scope="col">Mouse ID</th>
-            <th scope="col">Strain</th>
-            <th scope="col">Tube ID</th>
-            <th scope="col">Date of Birth</th>
-            <th scope="col">Sex</th>
-            <th scope="col">Father</th>
-            <th scope="col">Mother</th>
-            <th scope="col">Earmark</th>
-            <th scope="col">Clipped Date</th>
-            <th scope="col">State</th>
-            <th scope="col">Cull Date</th>
-            <th scope="col">Weaned</th>
-            <th scope="col">Weaned Date</th>
-            <th scope="col">Genotype</th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=mouse_id&sort_order={% if sort_by == 'mouse_id' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Mouse ID
+                    {% if sort_by == 'mouse_id' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=strain&sort_order={% if sort_by == 'strain' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Strain
+                    {% if sort_by == 'strain' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=tube_id&sort_order={% if sort_by == 'tube_id' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Tube ID
+                    {% if sort_by == 'tube_id' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=dob&sort_order={% if sort_by == 'dob' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Date of Birth
+                    {% if sort_by == 'dob' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=sex&sort_order={% if sort_by == 'sex' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Sex
+                    {% if sort_by == 'sex' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=father&sort_order={% if sort_by == 'father' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Father
+                    {% if sort_by == 'father' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=mother&sort_order={% if sort_by == 'mother' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Mother
+                    {% if sort_by == 'mother' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=earmark&sort_order={% if sort_by == 'earmark' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Earmark
+                    {% if sort_by == 'earmark' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=clipped_date&sort_order={% if sort_by == 'clipped_date' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Clipped Date
+                    {% if sort_by == 'clipped_date' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=state&sort_order={% if sort_by == 'state' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    State
+                    {% if sort_by == 'state' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=cull_date&sort_order={% if sort_by == 'cull_date' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Cull Date
+                    {% if sort_by == 'cull_date' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=weaned&sort_order={% if sort_by == 'weaned' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Weaned
+                    {% if sort_by == 'weaned' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=weaned_date&sort_order={% if sort_by == 'weaned_date' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Weaned Date
+                    {% if sort_by == 'weaned_date' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
+            <th scope="col">
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}sort_by=genotype&sort_order={% if sort_by == 'genotype' and sort_order == 'asc' %}desc{% else %}asc{% endif %}">
+                    Genotype
+                    {% if sort_by == 'genotype' %}{% if sort_order == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+                </a>
+            </th>
         </tr>
     </thead>
+    
     <tbody>
         {% if page_obj %}
         {% for mouse in page_obj %}
         {% if mouse.state == 'to_be_culled' %}
-
         <tr>
             <td style="background-color: orange"><a href="{% url 'view_mouse' mouse.mouse_id %}">{{ mouse.mouse_id }}</a></td>
-            <td style="background-color: orange">{{ mouse.strain.name }}</td>
-            <!-- Adjust to strain model's relevant field -->
+            <td style="background-color: orange">{{ mouse.strain.name }}</td> <!-- Adjust to strain model's relevant field -->
             <td style="background-color: orange">{{ mouse.tube_id }}</td>
             <td style="background-color: orange">{{ mouse.dob }}</td>
-            <td style="background-color: orange">{{ mouse.get_sex_display }}</td>
-            <!-- Display choice label for 'sex' field -->
+            <td style="background-color: orange">{{ mouse.get_sex_display }}</td> <!-- Display choice label for 'sex' field -->
 
             <td style="background-color: orange">
                 {% if mouse.father %}
@@ -67,11 +160,9 @@
                 {% endif %}
             </td>
 
-            <td style="background-color: orange">{{ mouse.get_earmark_display }}</td>
-            <!-- Display choice label for 'earmark' field -->
+            <td style="background-color: orange">{{ mouse.get_earmark_display }}</td> <!-- Display choice label for 'earmark' field -->
             <td style="background-color: orange">{{ mouse.clipped_date }}</td>
-            <td style="background-color: orange">{{ mouse.get_state_display }}</td>
-            <!-- Display choice label for 'state' field -->
+            <td style="background-color: orange">{{ mouse.get_state_display }}</td> <!-- Display choice label for 'state' field -->
             <td style="background-color: orange">{{ mouse.cull_date }}</td>
             <td style="background-color: orange">{{ mouse.weaned|yesno:"Yes,No" }}</td>
             <td style="background-color: orange">{{ mouse.weaned_date }}</td>
@@ -81,12 +172,10 @@
 
         <tr>
             <td style="background-color: rgb(255, 148, 148)"><a href="{% url 'view_mouse' mouse.mouse_id %}">{{ mouse.mouse_id }}</a></td>
-            <td style="background-color: rgb(255, 148, 148)">{{ mouse.strain.name }}</td>
-            <!-- Adjust to strain model's relevant field -->
+            <td style="background-color: rgb(255, 148, 148)">{{ mouse.strain.name }}</td> <!-- Adjust to strain model's relevant field -->
             <td style="background-color: rgb(255, 148, 148)">{{ mouse.tube_id }}</td>
             <td style="background-color: rgb(255, 148, 148)">{{ mouse.dob }}</td>
-            <td style="background-color: rgb(255, 148, 148)">{{ mouse.get_sex_display }}</td>
-            <!-- Display choice label for 'sex' field -->
+            <td style="background-color: rgb(255, 148, 148)">{{ mouse.get_sex_display }}</td> <!-- Display choice label for 'sex' field -->
 
             <td style="background-color: rgb(255, 148, 148)">
                 {% if mouse.father %}
@@ -106,28 +195,25 @@
                 {% endif %}
             </td>
 
-            <td style="background-color: rgb(255, 148, 148)">{{ mouse.get_earmark_display }}</td>
-            <!-- Display choice label for 'earmark' field -->
+            <td style="background-color: rgb(255, 148, 148)">{{ mouse.get_earmark_display }}</td> <!-- Display choice label for 'earmark' field -->
             <td style="background-color: rgb(255, 148, 148)">{{ mouse.clipped_date }}</td>
-            <td style="background-color: rgb(255, 148, 148)">{{ mouse.get_state_display }}</td>
-            <!-- Display choice label for 'state' field -->
+            <td style="background-color: rgb(255, 148, 148)">{{ mouse.get_state_display }}</td> <!-- Display choice label for 'state' field -->
             <td style="background-color: rgb(255, 148, 148)">{{ mouse.cull_date }}</td>
             <td style="background-color: rgb(255, 148, 148)">{{ mouse.weaned|yesno:"Yes,No" }}</td>
             <td style="background-color: rgb(255, 148, 148)">{{ mouse.weaned_date }}</td>
             <td style="background-color: rgb(255, 148, 148)">{{ mouse.get_genotype_display }}</td>
         </tr>
+
         {% else %}
 
         <tr>
-            <td style="background-color: rgb(239, 238, 238)"><a href="{% url 'view_mouse' mouse.mouse_id %}">{{ mouse.mouse_id }}</a></td>
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.strain.name }}</td>
-            <!-- Adjust to strain model's relevant field -->
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.tube_id }}</td>
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.dob }}</td>
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.get_sex_display }}</td>
-            <!-- Display choice label for 'sex' field -->
+            <td style="background-color: white"><a href="{% url 'view_mouse' mouse.mouse_id %}">{{ mouse.mouse_id }}</a></td>
+            <td style="background-color: white">{{ mouse.strain.name }}</td> <!-- Adjust to strain model's relevant field -->
+            <td style="background-color: white">{{ mouse.tube_id }}</td>
+            <td style="background-color: white">{{ mouse.dob }}</td>
+            <td style="background-color: white">{{ mouse.get_sex_display }}</td> <!-- Display choice label for 'sex' field -->
 
-            <td style="background-color: rgb(239, 238, 238)">
+            <td style="background-color: white">
                 {% if mouse.father %}
                 <!-- <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a> -->
                 <a href="{% url 'view_mouse' mouse.father.mouse_id %}">Mouse {{ mouse.father.mouse_id }}</a>
@@ -136,7 +222,7 @@
                 {% endif %}
             </td>
 
-            <td style="background-color: rgb(239, 238, 238)">
+            <td style="background-color: white">
                 {% if mouse.mother %}
                 <!-- <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a> -->
                 <a href="{% url 'view_mouse' mouse.mother.mouse_id %}">Mouse {{ mouse.mother.mouse_id }}</a>
@@ -145,22 +231,20 @@
                 {% endif %}
             </td>
 
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.get_earmark_display }}</td>
-            <!-- Display choice label for 'earmark' field -->
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.clipped_date }}</td>
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.get_state_display }}</td>
-            <!-- Display choice label for 'state' field -->
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.cull_date }}</td>
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.weaned|yesno:"Yes,No" }}</td>
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.weaned_date }}</td>
-            <td style="background-color: rgb(239, 238, 238)">{{ mouse.get_genotype_display }}</td>
-
+            <td style="background-color: white">{{ mouse.get_earmark_display }}</td> <!-- Display choice label for 'earmark' field -->
+            <td style="background-color: white">{{ mouse.clipped_date }}</td>
+            <td style="background-color: white">{{ mouse.get_state_display }}</td> <!-- Display choice label for 'state' field -->
+            <td style="background-color: white">{{ mouse.cull_date }}</td>
+            <td style="background-color: white">{{ mouse.weaned|yesno:"Yes,No" }}</td>
+            <td style="background-color: white">{{ mouse.weaned_date }}</td>
+            <td style="background-color: white">{{ mouse.get_genotype_display }}</td>
         </tr>
+        
         {% endif %}
         {% endfor %}
         {% else %}
         <tr>
-            <td colspan="30">No mice found.</td> <!-- Display text if there are no mice in database -->
+            <td colspan="13">No mice found.</td>
         </tr>
         {% endif %}
     </tbody>
@@ -168,5 +252,186 @@
 <!-- Pagination Component -->
 {% include "pagination.html" %}
 
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("searchInput");
+    const addFilterBtn = document.getElementById("addFilterBtn");
+    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+    const filterBoxContainer = document.getElementById("filterBoxContainer");
+
+    function updateFilters(reload = true) {
+        let filters = Array.from(filterBoxContainer.children).map(box => box.dataset.value);
+        sessionStorage.setItem("filters", JSON.stringify(filters));
+
+        // Check if any filter contains OR operators
+        let hasOrOperator = filters.some(filter => filter.toUpperCase().includes(" OR "));
+        
+        // If there's an explicit OR in any filter, use that directly
+        // Otherwise use AND between all filters
+        let queryString = hasOrOperator ? 
+            filters.join(" ") : // Keep the OR intact in existing filters
+            filters.join(" AND ");
+
+        if (reload) {
+            window.location.href = `?search=${encodeURIComponent(queryString)}`;
+        }
+    }
+
+    function addFilters(query, reload = true) {
+        if (!query.trim()) return;
+
+        // For OR queries, we want to add the whole thing as one filter
+        if (query.toLowerCase().includes(" or ")) {
+            let filterBox = document.createElement("div");
+            filterBox.className = "filter-box px-2 py-1 me-2 mb-2 border rounded bg-light";
+            // Format each part of the OR query
+            let formattedQuery = formatSearchTerm(query);
+            filterBox.dataset.value = formattedQuery; 
+            filterBox.innerHTML = `${formattedQuery} <span class="text-danger" style="cursor: pointer;">&times;</span>`;
+
+            filterBox.querySelector("span").addEventListener("click", function () {
+                filterBox.remove();
+                updateFilters();
+            });
+
+            filterBoxContainer.appendChild(filterBox);
+        } else {
+            // For regular queries, handle as before
+            let parsedFilters = parseSearchQuery(query);
+            let existingFilters = new Set(Array.from(filterBoxContainer.children).map(box => box.dataset.value.toLowerCase()));
+
+            parsedFilters.forEach(filter => {
+                if (!existingFilters.has(filter.toLowerCase())) {
+                    let filterBox = document.createElement("div");
+                    filterBox.className = "filter-box px-2 py-1 me-2 mb-2 border rounded bg-light";
+                    filterBox.dataset.value = filter;
+                    filterBox.innerHTML = `${filter} <span class="text-danger" style="cursor: pointer;">&times;</span>`;
+
+                    filterBox.querySelector("span").addEventListener("click", function () {
+                        filterBox.remove();
+                        updateFilters();
+                    });
+
+                    filterBoxContainer.appendChild(filterBox);
+                }
+            });
+        }
+
+        searchInput.value = "";
+        updateFilters(reload);
+    }
+
+    function parseSearchQuery(query) {
+        let isOrSearch = query.toLowerCase().includes(" or ");
+        let filters = [];
+
+        if (isOrSearch) {
+            // For OR queries, we'll handle them specially in addFilters
+            filters = [query]; // Keep the whole OR expression
+        } else {
+            filters = query.split(/\s+\band\b\s+/i).map(term => term.trim());
+        }
+
+        return filters.map(term => formatSearchTerm(term));
+    }
+
+    function formatSearchTerm(term) {
+        // If the term contains "OR", we want to preserve it as is 
+        // and process each side of the OR separately
+        if (/ OR /i.test(term)) {
+            const orParts = term.split(/ OR /i);
+            return orParts.map(part => formatSearchTerm(part.trim())).join(" OR ");
+        }
+        
+        let isNegation = term.toLowerCase().startsWith("not ");
+        if (isNegation) term = term.substring(4).trim();
+
+        // Handle specific column searches
+        if (/^\d+$/.test(term)) term = `mouse_id:${term}`;
+        else if (/^m\d+$/i.test(term)) term = `mouse_id:${term.substring(1)}`;
+        else if (/^t\d+$/i.test(term)) term = `tube_id:${term.substring(1)}`;
+        
+        // Handle earmark searches
+        else if (/^(tr|tl|br|bl)$/i.test(term)) term = `earmark:${term.toUpperCase()}`;
+        
+        // Handle state searches
+        else if (/^(alive|breeding|to be culled|deceased)$/i.test(term)) 
+            term = `state:${term.toLowerCase()}`;
+        
+        // Handle weaned searches
+        else if (/^(yes|no)$/i.test(term) && !term.toLowerCase().includes("weaned")) 
+            term = `weaned:${term.toLowerCase()}`;
+        
+        // Handle date searches with prefixes
+        else if (/^dob\s+(.+)$/i.test(term)) {
+            const match = term.match(/^dob\s+(.+)$/i);
+            term = `dob:${formatDateForSearch(match[1])}`;
+        } 
+        else if (/^weaned\s+(.+)$/i.test(term)) {
+            const match = term.match(/^weaned\s+(.+)$/i);
+            term = `weaned_date:${formatDateForSearch(match[1])}`;
+        }
+        else if (/^clipped\s+(.+)$/i.test(term)) {
+            const match = term.match(/^clipped\s+(.+)$/i);
+            term = `clipped_date:${formatDateForSearch(match[1])}`;
+        }
+        else if (/^cull\s+(.+)$/i.test(term)) {
+            const match = term.match(/^cull\s+(.+)$/i);
+            term = `cull_date:${formatDateForSearch(match[1])}`;
+        }
+        // Handle direct date patterns (default to DOB)
+        else if (isDatePattern(term)) {
+            term = `dob:${formatDateForSearch(term)}`;
+        }
+        // Handle sex search
+        else if (/^(male|female)$/i.test(term)) 
+            term = `sex:${term.toLowerCase()}`;
+
+        return isNegation ? `NOT ${term}` : term;
+    }
+
+    function isDatePattern(term) {
+        // Match various date formats
+        return /^\d{1,2}[-./]\d{1,2}[-./](\d{2}|\d{4})$/.test(term) || // dd/mm/yy, dd-mm-yyyy, etc.
+               /^\d{4}[-./]\d{1,2}[-./]\d{1,2}$/.test(term) ||         // yyyy-mm-dd, etc.
+               /^\d{1,2}[-./]\d{1,2}[-./]\d{1,2}$/.test(term);         // dd/mm/yy, etc.
+    }
+
+    function formatDateForSearch(dateStr) {
+        // Convert various date formats to a standardized format for searching
+        // This is a simplified implementation and might need enhancement
+        return dateStr.trim();
+    }
+
+    addFilterBtn.addEventListener("click", function () {
+        addFilters(searchInput.value);
+    });
+
+    searchInput.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            addFilters(searchInput.value);
+        }
+    });
+
+    // Add autocomplete functionality for common search terms
+    searchInput.addEventListener("input", function() {
+        // Here you could implement autocomplete suggestions for earmarks, states, etc.
+        // For a complete implementation, you might want to use a library like jQuery UI Autocomplete
+    });
+
+    clearFiltersBtn.addEventListener("click", function () {
+        sessionStorage.removeItem("filters");
+        filterBoxContainer.innerHTML = "";
+        window.location.href = "?search=";
+    });
+
+    const storedFilters = JSON.parse(sessionStorage.getItem("filters")) || [];
+    if (storedFilters.length > 0) {
+        storedFilters.forEach(term => addFilters(term, false));
+    }
+    });
+    </script>
 
 {% endblock %}

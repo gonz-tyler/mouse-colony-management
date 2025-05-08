@@ -1,4 +1,5 @@
 import logging
+import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
@@ -17,6 +18,11 @@ import json
 
 from django.views.generic.edit import UpdateView
 from django.contrib.auth.forms import PasswordResetForm
+import csv
+from django.http import HttpResponse
+from django.apps import apps
+import zipfile
+from io import BytesIO, StringIO
 
 # --- Messages ---
 record_added = "Record has been added successfully."
@@ -28,6 +34,34 @@ def terms_of_service(request):
     return render(request, 'legal/terms-of-service.html')
 def privacy_policy(request):
     return render(request, 'legal/privacy-policy.html')
+
+@login_required
+def download_database_csv(request):
+    # Use binary buffer for zip file
+    zip_buffer = BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+        for model in apps.get_models():
+            model_name = model._meta.model_name
+            file_name = f"{model_name}.csv"
+
+            # Use text buffer for CSV
+            csv_buffer = StringIO()
+            writer = csv.writer(csv_buffer)
+
+            fields = [field.name for field in model._meta.fields]
+            writer.writerow(fields)
+            for obj in model.objects.all():
+                writer.writerow([getattr(obj, field) for field in fields])
+
+            # Write the CSV string as a file inside the zip (encoded to bytes)
+            zip_file.writestr(file_name, csv_buffer.getvalue().encode('utf-8'))
+
+    # Prepare the response
+    zip_buffer.seek(0)
+    response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename="database_dump.zip"'
+    return response
 
 def password_reset(request):
     if request.method == "POST":
@@ -46,33 +80,261 @@ def password_reset_confirm(request):
 def password_reset_complete(request):
     return render(request, 'registration/password_reset_complete.html')
 
-
-
 @login_required
 def home_view(request):
-    # Debugging: Log the page number
-    page_number = request.GET.get('page', 1)
-    logging.debug(f"Requested page number: {page_number}")
-    # Fetch only the Mouse records that belong to the logged-in user
-    mice = Mouse.mice_managed_by_user(request.user).order_by("tube_id")
-    paginator = Paginator(mice, 10)  # Show 10 users per page
-    # Get the page number from the request (default to 1)
-    page_number = request.GET.get('page')
-    
-    # Ensure the page number is valid, otherwise default to 1
-    try:
-        page_number = int(page_number) if page_number is not None else 1
-        if page_number < 1:
-            page_number = 1
-    except (ValueError, TypeError):  # Catch invalid page number (e.g., 'abc' or None)
-        page_number = 1  # Default to the first page if invalid
+    query = request.GET.get('search', '').strip()
 
-    # Paginate the query
-    try:
-        page_obj = paginator.get_page(page_number)
-    except EmptyPage:
-        page_obj = paginator.get_page(paginator.num_pages)  # Fallback to the last page if page number is too high
-    return render(request, 'home.html', {'page_obj': page_obj})
+    mice = Mouse.mice_managed_by_user(request.user).order_by("tube_id")
+
+    if query:
+        # Case-insensitive check for OR operation
+        is_or_search = re.search(r"\s+\bOR\b\s+", query, re.IGNORECASE) is not None
+        query_filter = None  # Start with an empty query
+
+        # Split by OR (case-insensitive)
+        or_groups = re.split(r"\s+\bOR\b\s+", query, flags=re.IGNORECASE)  # Split OR groups
+
+        for or_group in or_groups:
+            subquery = Q()
+            and_parts = re.split(r"\s+\bAND\b\s+", or_group, flags=re.IGNORECASE)  # Split AND groups
+
+            for term in and_parts:
+                term = term.strip()
+
+                is_exclusion = term.lower().startswith("not ")
+                term = term[4:].strip() if is_exclusion else term
+
+                # Process the search term based on specific formats
+                filter_condition = process_search_term(term, is_exclusion)
+                
+                subquery &= filter_condition  # Apply AND within the OR group
+
+            if query_filter is None:
+                query_filter = subquery  # First condition
+            else:
+                query_filter |= subquery  # Apply OR between groups
+
+        if query_filter:
+            mice = mice.filter(query_filter)
+
+    # Handle sorting
+    sort_by = request.GET.get('sort_by', 'mouse_id')
+    sort_order = request.GET.get('sort_order', 'asc')
+
+    # Mapping of safe model fields to sort keys
+    valid_sort_fields = {
+        'mouse_id': 'mouse_id',
+        'strain': 'strain__name',
+        'tube_id': 'tube_id',
+        'dob': 'dob',
+        'sex': 'sex',
+        'father': 'father__mouse_id',
+        'mother': 'mother__mouse_id',
+        'earmark': 'earmark',
+        'clipped_date': 'clipped_date',
+        'state': 'state',
+        'cull_date': 'cull_date',
+        'weaned': 'weaned',
+        'weaned_date': 'weaned_date',
+    }
+
+    sort_field = valid_sort_fields.get(sort_by, 'mouse_id')
+    if sort_order == 'desc':
+        sort_field = f"-{sort_field}"
+
+    mice = mice.order_by(sort_field)
+
+    paginator = Paginator(mice, 10)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'home.html', {
+    'page_obj': page_obj,
+    'search_query': query,
+    'sort_by': sort_by,
+    'sort_order': sort_order
+    })
+
+
+def process_search_term(term, is_exclusion=False):
+    """Process a search term and return the appropriate query filter."""
+    
+    # Handle specific column searches with colon format
+    if ":" in term:
+        field, value = term.split(":", 1)
+        field = field.strip().lower()
+        value = value.strip()
+        
+        # Mouse ID and Tube ID searches
+        if field == "mouse_id":
+            try:
+                mouse_id = int(value)
+                return ~Q(mouse_id=mouse_id) if is_exclusion else Q(mouse_id=mouse_id)
+            except ValueError:
+                # If not a valid integer, return no results
+                return ~Q(pk__in=[]) if is_exclusion else Q(pk__in=[])
+        
+        elif field == "tube_id":
+            try:
+                tube_id = int(value)
+                return ~Q(tube_id=tube_id) if is_exclusion else Q(tube_id=tube_id)
+            except ValueError:
+                return ~Q(pk__in=[]) if is_exclusion else Q(pk__in=[])
+        
+        # Earmark searches
+        elif field == "earmark":
+            earmark_value = value.upper()
+            valid_earmarks = {"TR", "TL", "BR", "BL"}
+    
+            if earmark_value in valid_earmarks:
+                return ~Q(earmark__icontains=earmark_value) if is_exclusion else Q(earmark__icontains=earmark_value)
+            else:
+                return ~Q(pk__in=[]) if is_exclusion else Q(pk__in=[])
+        
+        # Sex searches
+        elif field == "sex":
+            sex_map = {"male": "M", "female": "F"}
+            sex_code = sex_map.get(value.lower())
+            if sex_code:
+                return ~Q(sex=sex_code) if is_exclusion else Q(sex=sex_code)
+            else:
+                return ~Q(pk__in=[]) if is_exclusion else Q(pk__in=[])
+
+        # State searches
+        elif field == "state":
+            state_value = value.lower()
+            state_map = {
+                "alive": "alive",
+                "breeding": "breeding",
+                "to be culled": "to_be_culled",
+                "deceased": "deceased"
+            }
+            internal_value = state_map.get(state_value)
+
+            if internal_value:
+                return ~Q(state=internal_value) if is_exclusion else Q(state=internal_value)
+            else:
+                return ~Q(pk__in=[]) if is_exclusion else Q(pk__in=[])
+
+        # Weaned searches
+        elif field == "weaned":
+            is_weaned = value.lower() == "yes"
+            return ~Q(weaned=is_weaned) if is_exclusion else Q(weaned=is_weaned)
+        
+        # Date field searches with various formats
+        elif field in ["dob", "clipped_date", "weaned_date", "cull_date"]:
+            try:
+                # Try to parse the date with multiple formats
+                parsed_date = parse_date_with_formats(value)
+                if parsed_date:
+                    # Create date range to search whole day (for DOB, clipped_date, weaned_date)
+                    if field != "cull_date":  # For fields without time components
+                        next_day = parsed_date + timezone.timedelta(days=1)
+                        if is_exclusion:
+                            return ~(Q(**{f"{field}__gte": parsed_date}) & Q(**{f"{field}__lt": next_day}))
+                        else:
+                            return Q(**{f"{field}__gte": parsed_date}) & Q(**{f"{field}__lt": next_day})
+                    else:  # For cull_date which includes time
+                        if is_exclusion:
+                            return ~Q(**{f"{field}__date": parsed_date})
+                        else:
+                            return Q(**{f"{field}__date": parsed_date})
+                else:
+                    return ~Q(pk__in=[]) if is_exclusion else Q(pk__in=[])  # No results if date parsing fails
+            except:
+                return ~Q(pk__in=[]) if is_exclusion else Q(pk__in=[])
+        
+        # Strain searches
+        elif field == "strain":
+            return ~Q(strain__name__icontains=value) if is_exclusion else Q(strain__name__icontains=value)
+        
+        # Default to strain search if field not recognized
+        else:
+            return ~Q(strain__name__icontains=term) if is_exclusion else Q(strain__name__icontains=term)
+    
+    # Convert shorthand formats
+    elif term.isdigit():
+        # Pure digits - search by mouse_id
+        return ~Q(mouse_id=int(term)) if is_exclusion else Q(mouse_id=int(term))
+    
+    elif re.match(r"^m\d+$", term, re.IGNORECASE):
+        # m followed by digits - search by mouse_id 
+        mouse_id = int(term[1:])
+        return ~Q(mouse_id=mouse_id) if is_exclusion else Q(mouse_id=mouse_id)
+    
+    elif re.match(r"^t\d+$", term, re.IGNORECASE):
+        # t followed by digits - search by tube_id
+        tube_id = int(term[1:])
+        return ~Q(tube_id=tube_id) if is_exclusion else Q(tube_id=tube_id)
+    
+    elif term.upper() in ["TR", "TL", "BR", "BL"]:
+        return ~Q(earmark__icontains=term.upper()) if is_exclusion else Q(earmark__icontains=term.upper())
+    
+    elif term.lower() in ["alive", "breeding", "to be culled", "deceased"]:
+        # Direct state values
+        return ~Q(state=term.lower()) if is_exclusion else Q(state=term.lower())
+    
+    elif term.lower() in ["male", "female"]:
+        sex_code = "M" if term.lower() == "male" else "F"
+        return ~Q(sex=sex_code) if is_exclusion else Q(sex=sex_code)
+
+    elif term.lower() in ["yes", "no"]:
+        # Direct weaned values
+        is_weaned = term.lower() == "yes"
+        return ~Q(weaned=is_weaned) if is_exclusion else Q(weaned=is_weaned)
+    
+    # Try to parse as a date (default to DOB search)
+    elif is_date_format(term):
+        try:
+            parsed_date = parse_date_with_formats(term)
+            if parsed_date:
+                next_day = parsed_date + timezone.timedelta(days=1)
+                if is_exclusion:
+                    return ~(Q(dob__gte=parsed_date) & Q(dob__lt=next_day))
+                else:
+                    return Q(dob__gte=parsed_date) & Q(dob__lt=next_day)
+        except:
+            pass  # If date parsing fails, fallback to strain search
+    
+    # Default to searching by strain if no specific format is recognized
+    return ~Q(strain__name__icontains=term) if is_exclusion else Q(strain__name__icontains=term)
+
+def is_date_format(text):
+    """Check if the text appears to be in a date format."""
+    # Check for various date patterns
+    date_patterns = [
+        r'\d{1,2}[-.\/]\d{1,2}[-.\/](\d{2}|\d{4})',  # dd/mm/yy or dd/mm/yyyy
+        r'\d{4}[-.\/]\d{1,2}[-.\/]\d{1,2}',          # yyyy/mm/dd
+        r'\d{1,2}[-.\/]\d{1,2}[-.\/]\d{1,2}'         # dd/mm/yy
+    ]
+    
+    for pattern in date_patterns:
+        if re.match(pattern, text):
+            return True
+    return False
+
+def parse_date_with_formats(date_string):
+    """Try to parse a date string using multiple common formats."""
+    formats = [
+        '%d.%m.%y', '%d.%m.%Y',  # 24.1.25, 24.1.2025
+        '%d/%m/%y', '%d/%m/%Y',  # 24/1/25, 24/1/2025
+        '%d-%m-%y', '%d-%m-%Y',  # 24-1-25, 24-1-2025
+        '%Y-%m-%d',              # 2025-01-24
+        '%Y/%m/%d',              # 2025/01/24
+        '%Y.%m.%d',              # 2025.01.24
+        '%m/%d/%y', '%m/%d/%Y',  # American format: 1/24/25, 1/24/2025
+        '%m-%d-%y', '%m-%d-%Y',  # American format: 1-24-25, 1-24-2025
+        '%m.%d.%y', '%m.%d.%Y',  # American format: 1.24.25, 1.24.2025
+    ]
+    
+    for fmt in formats:
+        try:
+            return datetime.strptime(date_string, fmt).date()
+        except ValueError:
+            continue
+    
+    return None
+
 
 @login_required
 def logout_user(request):
@@ -158,23 +420,62 @@ def delete_notification(request, notification_id):
 def genetic_tree(request, mouse_id):
     mouse = get_object_or_404(Mouse, mouse_id=mouse_id)
     
-    # Recursive function to get only parents and their parents recursively
-    def get_direct_ancestor_structure(mouse):
-        # Assuming `get_parents()` is a method that fetches direct parents only
-        ancestors = []
-        for parent in mouse.get_parents():  # Replace with actual logic to get parents
-            ancestors.append({
-                'name': f"Strain {parent.strain} - TubeID {parent.tube_id}",
-                'children': get_direct_ancestor_structure(parent)
-            })
-        return ancestors
+    # Build a comprehensive genetic network for Cytoscape
+    nodes = {}
+    edges = set()
+    
+    def add_mouse_and_relations(m, highlight_id, visited):
+        if m.mouse_id in visited:
+            return
+        visited.add(m.mouse_id)
+        # Add node
+        nodes[m.mouse_id] = {
+            'id': str(m.mouse_id),
+            'label': f"Strain {m.strain} - TubeID {m.tube_id}",
+            'highlight': m.mouse_id == highlight_id
+        }
+        # Add parents and parent-child edges
+        for parent in m.get_parents():
+            if parent and parent.mouse_id not in visited:
+                nodes[parent.mouse_id] = {
+                    'id': str(parent.mouse_id),
+                    'label': f"Strain {parent.strain} - TubeID {parent.tube_id}",
+                    'highlight': parent.mouse_id == highlight_id
+                }
+                edges.add((str(parent.mouse_id), str(m.mouse_id)))
+                add_mouse_and_relations(parent, highlight_id, visited)
+                # Add siblings (children of parent)
+                for sibling in list(parent.mother_of.all()) + list(parent.father_of.all()):
+                    if sibling.mouse_id != m.mouse_id and sibling.mouse_id not in visited:
+                        nodes[sibling.mouse_id] = {
+                            'id': str(sibling.mouse_id),
+                            'label': f"Strain {sibling.strain} - TubeID {sibling.tube_id}",
+                            'highlight': sibling.mouse_id == highlight_id
+                        }
+                        edges.add((str(parent.mouse_id), str(sibling.mouse_id)))
+                        add_mouse_and_relations(sibling, highlight_id, visited)
+        # Add children and child-parent edges
+        for child in list(m.mother_of.all()) + list(m.father_of.all()):
+            if child.mouse_id not in visited:
+                nodes[child.mouse_id] = {
+                    'id': str(child.mouse_id),
+                    'label': f"Strain {child.strain} - TubeID {child.tube_id}",
+                    'highlight': child.mouse_id == highlight_id
+                }
+                edges.add((str(m.mouse_id), str(child.mouse_id)))
+                add_mouse_and_relations(child, highlight_id, visited)
+    
+    add_mouse_and_relations(mouse, mouse.mouse_id, set())
 
-    tree_data = {
-        'name': f"Strain {mouse.strain} - TubeID {mouse.tube_id}",
-        'children': get_direct_ancestor_structure(mouse)
+    cy_data = {
+        'nodes': [{'data': n} for n in nodes.values()],
+        'edges': [{'data': {'source': s, 'target': t}} for (s, t) in edges]
     }
 
-    return render(request, 'genetictree.html', {'tree_data': json.dumps(tree_data), 'mouse': mouse})
+    return render(request, 'genetictree.html', {
+        'cy_data': json.dumps(cy_data),
+        'mouse': mouse
+    })
 
 @login_required
 def manage_users(request):
@@ -224,9 +525,21 @@ class MouseClass:
     @role_required(allowed_roles=['leader', 'staff', 'new_staff'])
     def view_mouse(request, mouse_id):
         if request.user.is_authenticated:
-            #look up mouse
-            mouse = Mouse.objects.get(mouse_id=mouse_id)
-            return render(request, 'mice/mouse_details.html', {'mouse':mouse})
+            mouse = get_object_or_404(Mouse, mouse_id=mouse_id)
+            # Generate genetic tree data
+            def get_direct_ancestor_structure(m):
+                ancestors = []
+                for parent in m.get_parents():
+                    ancestors.append({
+                        'name': f"Strain {parent.strain} - TubeID {parent.tube_id}",
+                        'children': get_direct_ancestor_structure(parent)
+                    })
+                return ancestors
+            tree_data = {
+                'name': f"Strain {mouse.strain} - TubeID {mouse.tube_id}",
+                'children': get_direct_ancestor_structure(mouse)
+            }
+            return render(request, 'mice/mouse_details.html', {'mouse': mouse, 'tree_data': json.dumps(tree_data)})
         else:
             messages.success(request, 'You must be logged in to view this page.')
             return redirect('index')
