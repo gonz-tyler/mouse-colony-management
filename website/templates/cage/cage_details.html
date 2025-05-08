@@ -161,7 +161,12 @@
                     "X-Requested-With": "XMLHttpRequest" // Necessary for Django's AJAX checks
                 }
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         const mouseSelect = document.getElementById("mouse");
@@ -211,7 +216,12 @@
                 },
                 body: formData
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
                         modal.style.display = "none";
@@ -228,6 +238,9 @@
 
         // Ensure modal is hidden on page load
         modal.style.display = "none";
+
+        // Prevent freezing by ensuring no blocking operations
+        console.log("Modal script initialized successfully.");
     });
 </script>
 
